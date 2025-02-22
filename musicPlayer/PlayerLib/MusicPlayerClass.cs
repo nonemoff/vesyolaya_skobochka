@@ -199,6 +199,88 @@ namespace MusicPlayerLib
             }
         }
 
+        public bool GetCurrentTrack(out Track currentTrack, out string errorMessage)
+        {
+            if (_currentIndex >= 0 && _currentIndex < _queue.Count)
+            {
+                currentTrack = _queue[_currentIndex];
+                errorMessage = string.Empty;
+                return true;
+            }
+            else
+            {
+                currentTrack = default;
+                errorMessage = "Error: No current track";
+                return false;
+            }
+        }
+
+        public bool Seek(TimeSpan newPosition, out string errorMessage)
+        {
+            if (_audioFile == null)
+            {
+                errorMessage = "Error: No track is playing";
+                return false;
+            }
+            if (newPosition < TimeSpan.Zero || newPosition > _audioFile.TotalTime)
+            {
+                errorMessage = "Error: Position out of range";
+                return false;
+            }
+            _audioFile.CurrentTime = newPosition;
+            errorMessage = string.Empty;
+            return true;
+        }
+
+        public bool FastForward(TimeSpan offset, out string errorMessage)
+        {
+            if (_audioFile == null)
+            {
+                errorMessage = "Error: No track is playing";
+                return false;
+            }
+            TimeSpan newTime = _audioFile.CurrentTime + offset;
+            if (newTime > _audioFile.TotalTime)
+            {
+                newTime = _audioFile.TotalTime;
+            }
+            _audioFile.CurrentTime = newTime;
+            errorMessage = string.Empty;
+            return true;
+        }
+
+        public bool Rewind(TimeSpan offset, out string errorMessage)
+        {
+            if (_audioFile == null)
+            {
+                errorMessage = "Error: No track is playing";
+                return false;
+            }
+            TimeSpan newTime = _audioFile.CurrentTime - offset;
+            if (newTime < TimeSpan.Zero)
+            {
+                newTime = TimeSpan.Zero;
+            }
+            _audioFile.CurrentTime = newTime;
+            errorMessage = string.Empty;
+            return true;
+        }
+        public bool GetCurrentTime(out TimeSpan currentTime, out string errorMessage)
+        {
+            if (_audioFile != null)
+            {
+                currentTime = _audioFile.CurrentTime;
+                errorMessage = string.Empty;
+                return true;
+            }
+            else
+            {
+                currentTime = TimeSpan.Zero;
+                errorMessage = "Error: No track is playing";
+                return false;
+            }
+        }
+
         public bool Shuffle(out string errorMessage)
         {
             if (_queue.Count == 0)
@@ -360,6 +442,30 @@ namespace MusicPlayerLib
         public bool ClearQueue(out string errorMessage)
         {
             return _queue.ClearQueue(out errorMessage);
+        }
+
+        public bool SeekTrack(TimeSpan newPosition, out string errorMessage)
+        {
+            return _queue.Seek(newPosition, out errorMessage);
+        }
+
+        public bool FastForwardTrack(TimeSpan offset, out string errorMessage)
+        {
+            return _queue.FastForward(offset, out errorMessage);
+        }
+
+        public bool RewindTrack(TimeSpan offset, out string errorMessage)
+        {
+            return _queue.Rewind(offset, out errorMessage);
+        }
+
+        public bool GetCurrentTrack(out Track currentTrack, out string errorMessage)
+        {
+            return _queue.GetCurrentTrack(out currentTrack, out errorMessage);
+        }
+        public bool GetCurrentTime(out TimeSpan currentTime, out string errorMessage)
+        {
+            return _queue.GetCurrentTime(out currentTime, out errorMessage);
         }
     }
 }

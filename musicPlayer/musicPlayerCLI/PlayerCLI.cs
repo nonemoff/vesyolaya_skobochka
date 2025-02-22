@@ -72,6 +72,10 @@ namespace musicPlayerCLI
                     case "cb":
                         ClearBuffer();
                         break;
+                    case "seek":
+                    case "sk":
+                        SeekTrack();
+                        break;
                     case "exit":
                     case "e":
                         Console.WriteLine("Exiting...");
@@ -96,6 +100,10 @@ namespace musicPlayerCLI
                 "prev or pr - play previous track",
                 "buffer or b - show loaded tracks",
                 "queue or q - show queue",
+                "shuffle or sh - shuffle tracks in queue",
+                "clearq or cq - clear queue",
+                "clearb or cb - clear buffer with loaded songs",
+                "seek or sk - seek track. Format:\n  if time starts with '-' then rewind\n  '+' then fast forward\n  otherwise jump to specified time",
                 "exit or e - exit the program"
             };
             foreach (string option in options)
@@ -137,7 +145,7 @@ namespace musicPlayerCLI
             string? input = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(input))
             {
-                Console.WriteLine("Error: No indices provided.");
+                Console.WriteLine("Error: Wrong input.");
                 return;
             }
             var parts = input.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -169,7 +177,7 @@ namespace musicPlayerCLI
             string? input = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(input))
             {
-                Console.WriteLine("Error: No indices provided.");
+                Console.WriteLine("Error: Wrong input.");
                 return;
             }
             var parts = input.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -302,6 +310,92 @@ namespace musicPlayerCLI
                 Console.WriteLine("Buffer cleared.");
             else
                 Console.WriteLine(errorMessage);
+        }
+        private void SeekTrack()
+        {
+            if (!player.Pause(out string pauseError))
+            {
+                Console.WriteLine("Error pausing track: " + pauseError);
+                return;
+            }
+
+            if (!player.GetCurrentTime(out TimeSpan currentTime, out string timeError))
+            {
+                Console.WriteLine(timeError);
+            }
+            else if (!player.GetCurrentTrack(out Track currentTrack, out string trackError))
+            {
+                Console.WriteLine(trackError);
+            }
+            else
+            {
+                Console.WriteLine($"Current track: {currentTrack.FileName}");
+                Console.WriteLine($"Current time: {currentTime} / Duration: {currentTrack.Duration}");
+            }
+
+            Console.WriteLine("Enter time for seeking in seconds:");
+            Console.WriteLine("  If prefixed with '-' then rewind");
+            Console.WriteLine("  If prefixed with '+' then fast forward");
+            Console.WriteLine("  Otherwise, jump to specified time");
+            string? input = Console.ReadLine()?.Trim();
+            if (string.IsNullOrEmpty(input))
+            {
+                Console.WriteLine("Error: Empty input.");
+                return;
+            }
+
+            try
+            {
+                bool seekResult = false;
+                string seekMessage = string.Empty;
+
+                if (input.StartsWith("-"))
+                {
+                    string timeStr = input.Substring(1);
+                    if (!double.TryParse(timeStr, out double seconds))
+                    {
+                        Console.WriteLine("Error: Invalid time format.");
+                        return;
+                    }
+                    TimeSpan offset = TimeSpan.FromSeconds(seconds);
+                    seekResult = player.RewindTrack(offset, out string errorMessage);
+                    seekMessage = seekResult ? $"Rewound by {offset}" : errorMessage;
+                }
+                else if (input.StartsWith("+"))
+                {
+                    string timeStr = input.Substring(1);
+                    if (!double.TryParse(timeStr, out double seconds))
+                    {
+                        Console.WriteLine("Error: Invalid time format.");
+                        return;
+                    }
+                    TimeSpan offset = TimeSpan.FromSeconds(seconds);
+                    seekResult = player.FastForwardTrack(offset, out string errorMessage);
+                    seekMessage = seekResult ? $"Fast forwarded by {offset}" : errorMessage;
+                }
+                else
+                {
+                    if (!double.TryParse(input, out double seconds))
+                    {
+                        Console.WriteLine("Error: Invalid time format.");
+                        return;
+                    }
+                    TimeSpan position = TimeSpan.FromSeconds(seconds);
+                    seekResult = player.SeekTrack(position, out string errorMessage);
+                    seekMessage = seekResult ? $"Jumped to {position}" : errorMessage;
+                }
+
+                Console.WriteLine(seekMessage);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error parsing time: " + ex.Message);
+            }
+
+            if (!player.Play(out string playError))
+            {
+                Console.WriteLine("Error resuming playback: " + playError);
+            }
         }
     }
 }
