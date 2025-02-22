@@ -4,7 +4,7 @@ class Program
 {
     static int Main()
     {
-        var cli = new playerCLI();
+        var cli = new PlayerCLI();
         cli.Run();
         return 0;
     }
