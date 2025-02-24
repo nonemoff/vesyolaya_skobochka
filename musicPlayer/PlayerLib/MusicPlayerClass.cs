@@ -5,7 +5,6 @@ using System.Collections.Generic;
 
 namespace MusicPlayerLib
 {
-
     public class MusicPlayer
     {
         private Buffer _buffer = new Buffer();
@@ -21,24 +20,20 @@ namespace MusicPlayerLib
 
             if (!Directory.Exists(path))
             {
-                throw new DirectoryNotFoundException($"Directory '{path}' does not exist.");
+                throw new DirectoryNotFoundException($"LoadSongs: The directory '{path}' does not exist.");
             }
 
             var files = Directory.GetFiles(path, "*.mp3");
+            if (files.Length == 0)
+            {
+                throw new InvalidOperationException($"LoadSongs: The directory '{path}' contains no mp3 files.");
+            }
+
             foreach (var file in files)
             {
-                if (!_buffer.GetTracks().Any(t => t.FullPath == file))
-                {
-                    _buffer.Add(new Track(file));
-                }
-            }
-
-            if (_buffer.GetTracks().Count == 0)
-            {
-                throw new InvalidOperationException("Directory contains no mp3 files.");
+                _buffer.Add(new Track(file));
             }
         }
-
 
         public List<Track> GetBuffer()
         {
@@ -58,6 +53,25 @@ namespace MusicPlayerLib
             {
                 _queue.AddTrack(track);
             }
+        }
+        public void RemoveTracksFromQueueByIndices(int[] indices)
+        {
+            _queue.RemoveTracksByIndices(indices);
+        }
+
+        public void ClearBuffer()
+        {
+            _buffer.Clear();
+        }
+
+        public void ClearQueue()
+        {
+            _queue.Clear();
+        }
+
+        public void ShuffleQueue()
+        {
+            _queue.Shuffle();
         }
     }
 }

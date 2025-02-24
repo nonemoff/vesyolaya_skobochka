@@ -38,9 +38,25 @@ namespace musicPlayerCLI
                         case "q":
                             ShowQueue();
                             break;
-                        case "select":
-                        case "s":
-                            SelectTracks();
+                        case "add":
+                        case "a":
+                            AddTracksToQueue();
+                            break;
+                        case "remove":
+                        case "r":
+                            RemoveTracksFromQueue();
+                            break;
+                        case "clearb":
+                        case "cb":
+                            ClearBuffer();
+                            break;
+                        case "clearq":
+                        case "cq":
+                            ClearQueue();
+                            break;
+                        case "shuffle":
+                        case "sh":
+                            ShuffleQueue();
                             break;
                         case "exit":
                         case "e":
@@ -61,12 +77,16 @@ namespace musicPlayerCLI
         {
             string[] options = new string[]
             {
-                "help or h - print help",
-                "load or l - load tracks from directory",
-                "buffer or b - show loaded tracks (buffer)",
-                "queue or q - display queued tracks",
-                "select or s - add track(s) to queue",
-                "exit or e  - exit the program"
+                "help    or h       - print help",
+                "load    or l       - load tracks from directory",
+                "buffer  or b       - show loaded tracks (buffer)",
+                "queue   or q       - display queued tracks",
+                "add     or a       - add track(s) to queue",
+                "remove  or r       - remove track(s) from queue",
+                "clearb  or cb      - clear the buffer",
+                "clearq  or cq      - clear the queue",
+                "shuffle or sh      - shuffle the queue",
+                "exit    or e       - exit the program"
             };
             foreach (string option in options)
             {
@@ -77,23 +97,16 @@ namespace musicPlayerCLI
         {
             Console.Write("Enter directory path (or leave empty for default): ");
             string? path = Console.ReadLine();
-            try
-            {
-                player.LoadSongs(path);
-                Console.WriteLine("Tracks loaded successfully.");
-                Console.WriteLine("Buffer tracks:");
-                ShowTracks(player.GetBuffer());
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to load tracks: {ex.Message}");
-            }
+            player.LoadSongs(path);
+            Console.WriteLine("Tracks loaded successfully.");
+            Console.WriteLine("Buffer tracks:");
+            ShowTracks(player.GetBuffer());
         }
         private void ShowTracks(List<Track> tracks)
         {
             for (int i = 0; i < tracks.Count; i++)
             {
-                Console.WriteLine($"[{i}] {tracks[i].Artist} - {tracks[i].FileName}");
+                Console.WriteLine($"[{i}] {tracks[i].Artist} - {tracks[i].Title}");
             }
         }
         private void ShowBuffer()
@@ -118,7 +131,7 @@ namespace musicPlayerCLI
             Console.WriteLine("Queue tracks:");
             ShowTracks(queueTracks);
         }
-        private void SelectTracks()
+        private void AddTracksToQueue()
         {
             ShowBuffer();
             Console.Write("Enter track indices to add to queue (separated by spaces or commas): ");
@@ -143,15 +156,53 @@ namespace musicPlayerCLI
                     return;
                 }
             }
-            try
+            player.AddTracksToQueueByIndices(indices.ToArray());
+            Console.WriteLine("Selected tracks have been added to the queue.");
+        }
+        private void RemoveTracksFromQueue()
+        {
+            ShowQueue();
+            Console.Write("Enter track indices to remove from queue (separated by spaces or commas): ");
+            string? input = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(input))
             {
-                player.AddTracksToQueueByIndices(indices.ToArray());
-                Console.WriteLine("Selected tracks have been added to the queue.");
+                Console.WriteLine("No indices entered.");
+                return;
             }
-            catch (Exception ex)
+            char[] separators = new char[] { ' ', ',' };
+            string[] parts = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
+            List<int> indices = new List<int>();
+            foreach (string part in parts)
             {
-                Console.WriteLine($"Failed to add tracks to queue: {ex.Message}");
+                if (int.TryParse(part, out int index))
+                {
+                    indices.Add(index);
+                }
+                else
+                {
+                    Console.WriteLine($"Invalid index: {part}");
+                    return;
+                }
             }
+            player.RemoveTracksFromQueueByIndices(indices.ToArray());
+            Console.WriteLine("Selected tracks have been removed from the queue.");
+        }
+        private void ClearBuffer()
+        {
+            player.ClearBuffer();
+            Console.WriteLine("Buffer has been cleared.");
+        }
+        private void ClearQueue()
+        {
+            player.ClearQueue();
+            Console.WriteLine("Queue has been cleared.");
+        }
+
+        private void ShuffleQueue()
+        {
+            player.ShuffleQueue();
+            Console.WriteLine("Queue has been shuffled.");
+            ShowQueue();
         }
     }
 }

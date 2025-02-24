@@ -7,7 +7,6 @@ namespace MusicPlayerLib
     public class Track
     {
         public string FullPath { get; }
-        public string FileName { get; }
         public TimeSpan Duration { get; }
         public string Artist { get; }
         public string Title { get; }
@@ -47,7 +46,6 @@ namespace MusicPlayerLib
                 {
                     Title = Path.GetFileNameWithoutExtension(fullPath);
                 }
-                FileName = Title;
 
             }
             catch (Exception ex)
