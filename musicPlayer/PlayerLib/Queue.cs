@@ -21,6 +21,10 @@ namespace MusicPlayerLib
 
         public Track GetCurrentTrack()
         {
+            if (!ValidateIndex(_currentTrackIndex))
+            {
+                throw new ArgumentOutOfRangeException(nameof(_currentTrackIndex), "There is no current track.");
+            }
             return _queue[_currentTrackIndex];
         }
 
