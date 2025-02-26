@@ -16,8 +16,15 @@ namespace musicPlayerCLI
         {
             while (true)
             {
-                Console.Write("\nChoose option: ");
-                string? command = Console.ReadLine()?.Trim().ToLower();
+                Console.Write("\nEnter command: ");
+                string? inputLine = Console.ReadLine()?.Trim();
+                if (string.IsNullOrEmpty(inputLine))
+                    continue;
+
+                string[] tokens = inputLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                string command = tokens[0].ToLower();
+                string[] args = tokens.Skip(1).ToArray();
+
                 try
                 {
                     switch (command)
@@ -28,7 +35,7 @@ namespace musicPlayerCLI
                             break;
                         case "load":
                         case "l":
-                            LoadTracks();
+                            LoadTracks(args);
                             break;
                         case "buffer":
                         case "b":
@@ -40,11 +47,11 @@ namespace musicPlayerCLI
                             break;
                         case "add":
                         case "a":
-                            AddTracksToQueue();
+                            AddTracksToQueue(args);
                             break;
                         case "remove":
                         case "r":
-                            RemoveTracksFromQueue();
+                            RemoveTracksFromQueue(args);
                             break;
                         case "clearb":
                         case "cb":
@@ -76,7 +83,7 @@ namespace musicPlayerCLI
                             break;
                         case "seek":
                         case "sk":
-                            Seek();
+                            Seek(args);
                             break;
                         case "exit":
                         case "e":
@@ -102,11 +109,11 @@ namespace musicPlayerCLI
                 "help    or h       - print help",
                 "exit    or e       - exit the program",
                 "\n-- Tracks Management --",
-                "load    or l       - load tracks from directory",
+                "load    or l [dir]  - load tracks from directory (optional argument: directory path)",
                 "buffer  or b       - show loaded tracks (buffer)",
                 "queue   or q       - display queued tracks",
-                "add     or a       - add track(s) to queue",
-                "remove  or r       - remove track(s) from queue",
+                "add     or a [i1,i2,...] - add track(s) to queue by indices (arguments separated by space or comma)",
+                "remove  or r [i1,i2,...] - remove track(s) from queue by indices",
                 "clearb  or cb      - clear the buffer",
                 "clearq  or cq      - clear the queue",
                 "shuffle or sh      - shuffle the queue",
@@ -115,10 +122,10 @@ namespace musicPlayerCLI
                 "pause   or pa      - pause current track",
                 "next    or n       - play next track",
                 "prev    or pr      - play previous track",
-                "seek    or sk      - seek track to specified position (e.g., +10, -5, 30)",
+                "seek    or sk [time] - seek track to specified position (e.g., +10, -5, 30)",
                 "                   - using + adds time to current position",
-                "                   - using - substract time from current position",
-                "                   - other set track to specified position"
+                "                   - using - subtracts time from current position",
+                "                   - no sign sets track to specified position"
             };
             foreach (string option in options)
             {
@@ -126,10 +133,18 @@ namespace musicPlayerCLI
             }
         }
 
-        private void LoadTracks()
+        private void LoadTracks(string[] args)
         {
-            Console.Write("Enter directory path (or leave empty for default): ");
-            string? path = Console.ReadLine();
+            string? path;
+            if (args.Length > 0)
+            {
+                path = args[0];
+            }
+            else
+            {
+                Console.Write("Enter directory path (or leave empty for default): ");
+                path = Console.ReadLine();
+            }
             player.LoadSongs(path);
             Console.WriteLine("Tracks loaded successfully.");
             Console.WriteLine("Buffer tracks:");
@@ -168,20 +183,21 @@ namespace musicPlayerCLI
             ShowTracks(queueTracks);
         }
 
-        private void AddTracksToQueue()
+        private void AddTracksToQueue(string[] args)
         {
-            ShowBuffer();
-            Console.Write("Enter track indices to add to queue (separated by spaces or commas): ");
-            string? input = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(input))
+            if (args.Length == 0)
             {
-                Console.WriteLine("No indices entered.");
-                return;
+                Console.Write("Enter track indices to add to queue (separated by spaces or commas): ");
+                string? input = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    Console.WriteLine("No indices entered.");
+                    return;
+                }
+                args = input.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
             }
-            char[] separators = new char[] { ' ', ',' };
-            string[] parts = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
             List<int> indices = new List<int>();
-            foreach (string part in parts)
+            foreach (string part in args)
             {
                 if (int.TryParse(part, out int index))
                 {
@@ -197,20 +213,21 @@ namespace musicPlayerCLI
             Console.WriteLine("Selected tracks have been added to the queue.");
         }
 
-        private void RemoveTracksFromQueue()
+        private void RemoveTracksFromQueue(string[] args)
         {
-            ShowQueue();
-            Console.Write("Enter track indices to remove from queue (separated by spaces or commas): ");
-            string? input = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(input))
+            if (args.Length == 0)
             {
-                Console.WriteLine("No indices entered.");
-                return;
+                Console.Write("Enter track indices to remove from queue (separated by spaces or commas): ");
+                string? input = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    Console.WriteLine("No indices entered.");
+                    return;
+                }
+                args = input.Split(new char[] { ' ', ',' }, StringSplitOptions.RemoveEmptyEntries);
             }
-            char[] separators = new char[] { ' ', ',' };
-            string[] parts = input.Split(separators, StringSplitOptions.RemoveEmptyEntries);
             List<int> indices = new List<int>();
-            foreach (string part in parts)
+            foreach (string part in args)
             {
                 if (int.TryParse(part, out int index))
                 {
@@ -269,24 +286,30 @@ namespace musicPlayerCLI
             Console.WriteLine("Switched to previous track.");
         }
 
-        private void Seek()
+        private void Seek(string[] args)
         {
+            TimeSpan currentTime, totalTime;
             player.PauseTrack();
-            TimeSpan currentTime = player.GetCurrentTrackTime();
-            TimeSpan totalTime = player.GetCurrentTrackTotalDuration();
-            Console.WriteLine($"Track paused at ({currentTime.Minutes:D2}:{currentTime.Seconds:D2}/{totalTime.Minutes:D2}:{totalTime.Seconds:D2}).");
-
-            Console.Write("Enter seek time command (e.g., +10, -5, 30): ");
-            string? input = Console.ReadLine();
-            if (string.IsNullOrWhiteSpace(input))
+            if (args.Length == 0)
             {
-                Console.WriteLine("No seek time entered.");
-                return;
+                player.PauseTrack();
+                currentTime = player.GetCurrentTrackTime();
+                totalTime = player.GetCurrentTrackTotalDuration();
+                Console.WriteLine($"Track paused at ({currentTime.Minutes:D2}:{currentTime.Seconds:D2}/{totalTime.Minutes:D2}:{totalTime.Seconds:D2}).");
+                Console.Write("Enter seek time command (e.g., +10, -5, 30): ");
+                string? input = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(input))
+                {
+                    Console.WriteLine("No seek time entered.");
+                    return;
+                }
+                args = new string[] { input };
             }
-            player.SeekTrack(input);
+            player.SeekTrack(args[0]);
             player.PlayTrack();
-            Console.WriteLine("Track position updated.");
+            currentTime = player.GetCurrentTrackTime();
+            totalTime = player.GetCurrentTrackTotalDuration();
+            Console.WriteLine($"Track seeked at ({currentTime.Minutes:D2}:{currentTime.Seconds:D2}/{totalTime.Minutes:D2}:{totalTime.Seconds:D2}).");
         }
-
     }
 }
