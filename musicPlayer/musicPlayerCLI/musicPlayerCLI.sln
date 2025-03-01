@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicPlayerCLI", "MusicPlay
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicPlayerLib", "..\PlayerLib\MusicPlayerLib.csproj", "{8AFD2558-4744-4669-8AAB-6F783E10C1B4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicPlayerGUI", "..\MusicPlayerGUI\MusicPlayerGUI.csproj", "{EB9B1A39-71BD-4E06-A95F-8A3FDBC79991}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MusicPlayerGUI", "..\MusicPlayerGUI\MusicPlayerGUI.csproj", "{707DE787-A76C-4A09-8255-D4522A81E59B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,12 +23,12 @@ Global
 		{8AFD2558-4744-4669-8AAB-6F783E10C1B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8AFD2558-4744-4669-8AAB-6F783E10C1B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8AFD2558-4744-4669-8AAB-6F783E10C1B4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EB9B1A39-71BD-4E06-A95F-8A3FDBC79991}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{EB9B1A39-71BD-4E06-A95F-8A3FDBC79991}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{EB9B1A39-71BD-4E06-A95F-8A3FDBC79991}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{EB9B1A39-71BD-4E06-A95F-8A3FDBC79991}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{EB9B1A39-71BD-4E06-A95F-8A3FDBC79991}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EB9B1A39-71BD-4E06-A95F-8A3FDBC79991}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{707DE787-A76C-4A09-8255-D4522A81E59B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{707DE787-A76C-4A09-8255-D4522A81E59B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{707DE787-A76C-4A09-8255-D4522A81E59B}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{707DE787-A76C-4A09-8255-D4522A81E59B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{707DE787-A76C-4A09-8255-D4522A81E59B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{707DE787-A76C-4A09-8255-D4522A81E59B}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
