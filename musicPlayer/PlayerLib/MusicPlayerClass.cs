@@ -1,156 +1,234 @@
 ﻿using System;
 using System.IO;
-using NAudio.Wave;
 using System.Linq;
 using System.Collections.Generic;
+using NAudio.Wave;
 
 namespace MusicPlayerLib
 {
+    public enum PlayerState
+    {
+        Stopped,
+        Playing,
+        Paused
+    }
 
     public class MusicPlayer
     {
-        private List<Track> _buffer { get; } = new List<Track>();
-        private PlaybackQueue _queue { get; } = new PlaybackQueue();
+        private Buffer _buffer = new Buffer();
+        private Queue _queue = new Queue();
+        private string _defaultPath = Path.Combine("C:", "Users", "Matvey", "Desktop");
 
-        public bool LoadSongs(string? path, out string[] songs, out string errorMessage)
+        private IWavePlayer _waveOut;
+        private AudioFileReader _audioFileReader;
+        private PlayerState _playerState = PlayerState.Stopped;
+
+        public void LoadSongs(string? path)
         {
             if (string.IsNullOrWhiteSpace(path))
             {
-                path = Path.Combine("C:", "Users", "Matvey", "Desktop");
+                path = _defaultPath;
             }
+
             if (!Directory.Exists(path))
             {
-                _buffer.Clear();
-                errorMessage = $"Error: Directory '{path}' does not exist";
-                songs = Array.Empty<string>();
-                return false;
+                throw new DirectoryNotFoundException($"LoadSongs: The directory '{path}' does not exist.");
             }
+
             var files = Directory.GetFiles(path, "*.mp3");
+            if (files.Length == 0)
+            {
+                throw new InvalidOperationException($"LoadSongs: The directory '{path}' contains no mp3 files.");
+            }
+
             foreach (var file in files)
             {
-                if (!_buffer.Any(t => t.FullPath == file))
-                {
-                    _buffer.Add(new Track(file));
-                }
+                _buffer.Add(new Track(file));
             }
-            if (_buffer.Count == 0)
-            {
-                errorMessage = "Error: Directory contains no mp3 files";
-                songs = Array.Empty<string>();
-                return false;
-            }
-            songs = _buffer.Select(t => t.FullPath).ToArray();
-            errorMessage = string.Empty;
-            return true;
-        }
-
-        public bool AddTrackToQueue(int[] indices, out string errorMessage)
-        {
-            foreach (var index in indices)
-            {
-                if (index < 0 || index >= _buffer.Count)
-                {
-                    errorMessage = "Error: Wrong index";
-                    return false;
-                }
-            }
-            foreach (var index in indices)
-            {
-                _queue.AddTrack(_buffer[index], out string _);
-            }
-            errorMessage = string.Empty;
-            return true;
-        }
-
-        public bool RemoveTrackFromQueue(int[] indices, out string errorMessage)
-        {
-            var sortedIndices = indices.OrderByDescending(i => i).ToArray();
-            foreach (var index in sortedIndices)
-            {
-                if (!_queue.RemoveTrack(index, out string err))
-                {
-                    errorMessage = err;
-                    return false;
-                }
-            }
-            errorMessage = string.Empty;
-            return true;
-        }
-
-        public bool Play(out string errorMessage)
-        {
-            return _queue.Play(out errorMessage);
-        }
-
-        public bool Pause(out string errorMessage)
-        {
-            return _queue.Pause(out errorMessage);
-        }
-
-        public bool NextTrack(out string errorMessage)
-        {
-            return _queue.NextTrack(out errorMessage);
-        }
-
-        public bool PreviousTrack(out string errorMessage)
-        {
-            return _queue.PreviousTrack(out errorMessage);
         }
 
         public List<Track> GetBuffer()
         {
-            return new List<Track>(_buffer);
+            return _buffer.GetTracks();
         }
 
         public List<Track> GetQueue()
         {
-            return _queue.GetQueue();
+            return _queue.GetTracks();
         }
 
-        public bool GetCurrentTrackIndex(out int currentIndex, out string errorMessage)
+        public void AddTracksToQueueByIndices(int[] indices)
         {
-            return _queue.GetCurrentTrackIndex(out currentIndex, out errorMessage);
+            List<Track> tracksToAdd = _buffer.GetTracksByIndices(indices);
+            foreach (Track track in tracksToAdd)
+            {
+                _queue.AddTrack(track);
+            }
         }
 
-        public bool ClearBuffer(out string errorMessage)
+        public void RemoveTracksFromQueueByIndices(int[] indices)
+        {
+            _queue.RemoveTracksByIndices(indices);
+        }
+
+        public void ClearBuffer()
         {
             _buffer.Clear();
-            errorMessage = string.Empty;
-            return true;
         }
 
-        public bool ShuffleQueue(out string errorMessage)
+        public void ClearQueue()
         {
-            return _queue.Shuffle(out errorMessage);
+            _queue.Clear();
         }
 
-        public bool ClearQueue(out string errorMessage)
+        public void ShuffleQueue()
         {
-            return _queue.ClearQueue(out errorMessage);
+            _queue.Shuffle();
         }
 
-        public bool SeekTrack(TimeSpan newPosition, out string errorMessage)
+        private void StopPlayback()
         {
-            return _queue.Seek(newPosition, out errorMessage);
+            if (_waveOut != null)
+            {
+                _waveOut.PlaybackStopped -= OnPlaybackStopped;
+                _waveOut.Stop();
+                _waveOut.Dispose();
+                _waveOut = null;
+            }
+
+            if (_audioFileReader != null)
+            {
+                _audioFileReader.Dispose();
+                _audioFileReader = null;
+            }
+            _playerState = PlayerState.Stopped;
         }
 
-        public bool FastForwardTrack(TimeSpan offset, out string errorMessage)
+        public void PlayTrack()
         {
-            return _queue.FastForward(offset, out errorMessage);
+            if (_playerState == PlayerState.Paused && _waveOut != null)
+            {
+                _waveOut.Play();
+                _playerState = PlayerState.Playing;
+                return;
+            }
+
+            StopPlayback();
+            Track currentTrack = _queue.GetCurrentTrack();
+
+            try
+            {
+                _audioFileReader = new AudioFileReader(currentTrack.FullPath);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Не удалось загрузить трек '{currentTrack.FullPath}'.", ex);
+            }
+
+            _waveOut = new WaveOutEvent();
+            _waveOut.Init(_audioFileReader);
+            _waveOut.PlaybackStopped += OnPlaybackStopped;
+            _waveOut.Play();
+            _playerState = PlayerState.Playing;
         }
 
-        public bool RewindTrack(TimeSpan offset, out string errorMessage)
+        public void PauseTrack()
         {
-            return _queue.Rewind(offset, out errorMessage);
+            if (_waveOut != null && _waveOut.PlaybackState == PlaybackState.Playing)
+            {
+                _waveOut.Pause();
+                _playerState = PlayerState.Paused;
+            }
         }
 
-        public bool GetCurrentTrack(out Track currentTrack, out string errorMessage)
+        public void NextTrack()
         {
-            return _queue.GetCurrentTrack(out currentTrack, out errorMessage);
+            _queue.NextTrack();
+            PlayTrack();
         }
-        public bool GetCurrentTime(out TimeSpan currentTime, out string errorMessage)
+
+        public void PrevTrack()
         {
-            return _queue.GetCurrentTime(out currentTime, out errorMessage);
+            _queue.PrevTrack();
+            PlayTrack();
+        }
+
+        public void SeekTrack(string timeCommand)
+        {
+            if (_audioFileReader == null)
+            {
+                throw new InvalidOperationException("Нет загруженного трека для перемотки.");
+            }
+
+            double seconds;
+            TimeSpan newTime;
+            if (timeCommand.StartsWith("+"))
+            {
+                if (!double.TryParse(timeCommand.Substring(1), out seconds))
+                {
+                    throw new ArgumentException("Неверный формат времени для перемотки.", nameof(timeCommand));
+                }
+                newTime = _audioFileReader.CurrentTime.Add(TimeSpan.FromSeconds(seconds));
+            }
+            else if (timeCommand.StartsWith("-"))
+            {
+                if (!double.TryParse(timeCommand.Substring(1), out seconds))
+                {
+                    throw new ArgumentException("Неверный формат времени для перемотки.", nameof(timeCommand));
+                }
+                newTime = _audioFileReader.CurrentTime.Subtract(TimeSpan.FromSeconds(seconds));
+            }
+            else
+            {
+                if (!double.TryParse(timeCommand, out seconds))
+                {
+                    throw new ArgumentException("Неверный формат времени для перемотки.", nameof(timeCommand));
+                }
+                newTime = TimeSpan.FromSeconds(seconds);
+            }
+
+            if (newTime < TimeSpan.Zero)
+            {
+                newTime = TimeSpan.Zero;
+            }
+            if (newTime > _audioFileReader.TotalTime)
+            {
+                newTime = _audioFileReader.TotalTime;
+            }
+            _audioFileReader.CurrentTime = newTime;
+        }
+
+        private void OnPlaybackStopped(object sender, StoppedEventArgs e)
+        {
+            if (_playerState != PlayerState.Paused && _audioFileReader != null && _audioFileReader.Position >= _audioFileReader.Length)
+            {
+                try
+                {
+                    NextTrack();
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    StopPlayback();
+                }
+            }
+        }
+
+        public TimeSpan GetCurrentTrackTime()
+        {
+            if (_audioFileReader != null)
+            {
+                return _audioFileReader.CurrentTime;
+            }
+            return TimeSpan.Zero;
+        }
+
+        public TimeSpan GetCurrentTrackTotalDuration()
+        {
+            if (_audioFileReader != null)
+            {
+                return _audioFileReader.TotalTime;
+            }
+            return TimeSpan.Zero;
         }
     }
 }
