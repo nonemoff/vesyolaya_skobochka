@@ -113,20 +113,23 @@ namespace MusicPlayerLib
             }
 
             Track currentTrack = _queue[_currentTrackIndex];
-            List<Track> newOrder;
+            List<Track> remainingTracks = _queue.ToList();
+            remainingTracks.RemoveAt(_currentTrackIndex);
 
-            do
+            List<Track> shuffledRemaining = remainingTracks.OrderBy(x => rnd.Next()).ToList();
+            List<Track> newOrder = new List<Track> { currentTrack };
+            newOrder.AddRange(shuffledRemaining);
+
+            while (originalOrder.SequenceEqual(newOrder))
             {
-                var remainingTracks = _queue.Where(t => t != currentTrack)
-                                            .OrderBy(x => rnd.Next())
-                                            .ToList();
+                shuffledRemaining = remainingTracks.OrderBy(x => rnd.Next()).ToList();
                 newOrder = new List<Track> { currentTrack };
-                newOrder.AddRange(remainingTracks);
+                newOrder.AddRange(shuffledRemaining);
             }
-            while (originalOrder.SequenceEqual(newOrder));
 
             _queue = newOrder;
             _currentTrackIndex = 0;
         }
+
     }
 }

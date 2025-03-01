@@ -106,26 +106,26 @@ namespace musicPlayerCLI
             string[] options = new string[]
             {
                 "-- General --",
-                "help    or h       - print help",
-                "exit    or e       - exit the program",
+                "help    or h             - print help",
+                "exit    or e             - exit the program",
                 "\n-- Tracks Management --",
-                "load    or l [dir]  - load tracks from directory (optional argument: directory path)",
-                "buffer  or b       - show loaded tracks (buffer)",
-                "queue   or q       - display queued tracks",
+                "load    or l [dir]       - load tracks from directory (optional argument: directory path)",
+                "buffer  or b             - show loaded tracks (buffer)",
+                "queue   or q             - display queued tracks",
                 "add     or a [i1,i2,...] - add track(s) to queue by indices (arguments separated by space or comma)",
                 "remove  or r [i1,i2,...] - remove track(s) from queue by indices",
-                "clearb  or cb      - clear the buffer",
-                "clearq  or cq      - clear the queue",
-                "shuffle or sh      - shuffle the queue",
+                "clearb  or cb            - clear the buffer",
+                "clearq  or cq            - clear the queue",
+                "shuffle or sh            - shuffle the queue",
                 "\n-- Playback Control --",
-                "play    or pl      - play/resume current track",
-                "pause   or pa      - pause current track",
-                "next    or n       - play next track",
-                "prev    or pr      - play previous track",
-                "seek    or sk [time] - seek track to specified position (e.g., +10, -5, 30)",
-                "                   - using + adds time to current position",
-                "                   - using - subtracts time from current position",
-                "                   - no sign sets track to specified position"
+                "play    or pl            - play/resume current track",
+                "pause   or pa            - pause current track",
+                "next    or n             - play next track",
+                "prev    or pr            - play previous track",
+                "seek    or sk [time]     - seek track to specified position (e.g., +10, -5, 30)",
+                "                         - using + adds time to current position",
+                "                         - using - subtracts time from current position",
+                "                         - no sign sets track to specified position"
             };
             foreach (string option in options)
             {

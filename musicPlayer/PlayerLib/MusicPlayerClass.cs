@@ -143,12 +143,14 @@ namespace MusicPlayerLib
 
         public void NextTrack()
         {
+            StopPlayback();
             _queue.NextTrack();
             PlayTrack();
         }
 
         public void PrevTrack()
         {
+            StopPlayback();
             _queue.PrevTrack();
             PlayTrack();
         }
