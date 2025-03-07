@@ -17,7 +17,7 @@ namespace MusicPlayerLib
     {
         private Buffer _buffer = new Buffer();
         private Queue _queue = new Queue();
-        private string _defaultPath = Path.Combine("C:", "Users", "Matvey", "Desktop");
+        private string _defaultPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
 
         private IWavePlayer _waveOut;
         private AudioFileReader _audioFileReader;

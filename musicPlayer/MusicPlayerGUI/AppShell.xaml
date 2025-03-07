@@ -8,7 +8,7 @@
     Title="MusicPlayerGUI">
 
     <ShellContent
-        Title="Home"
+        Title="MainPage"
         ContentTemplate="{DataTemplate local:MainPage}"
         Route="MainPage" />
 
