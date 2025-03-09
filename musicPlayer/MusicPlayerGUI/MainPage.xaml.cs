@@ -1,73 +1,142 @@
 ﻿using System;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Windows.Input;
 using Microsoft.Maui.Controls;
-using System.Collections.Generic;
 using MusicPlayerLib;
+using System.Collections.Generic;
+
+public enum NotificationType
+{
+    Error,
+    Notification
+}
+
+public class NotificationStyle
+{
+    public Color BackgroundColor { get; }
+    public Color TextColor { get; }
+    public Color ButtonColor { get; }
+
+    public NotificationStyle(Color backgroundColor, Color textColor, Color buttonColor)
+    {
+        BackgroundColor = backgroundColor;
+        TextColor = textColor;
+        ButtonColor = buttonColor;
+    }
+}
+
+public class TrackViewModel
+{
+    public string Title { get; set; }
+    public string Artist { get; set; }
+    public string Duration { get; set; }
+    public int Index { get; set; }
+    public ICommand AddToQueueCommand { get; set; }
+
+    public TrackViewModel(int index, string title, string artist, string duration, Action<int> addToQueueAction)
+    {
+        Index = index;
+        Title = title;
+        Artist = artist;
+        Duration = duration;
+        AddToQueueCommand = new Command(() => addToQueueAction(Index));
+    }
+}
 
 namespace MusicPlayerGUI
 {
     public partial class MainPage : ContentPage
     {
-        // Экземпляр класса MusicPlayer
-        MusicPlayer _musicPlayer = new MusicPlayer();
+        private MusicPlayer _musicPlayer = new MusicPlayer();
+
+        public ObservableCollection<TrackViewModel> Tracks { get; set; } = new();
+
+        private readonly Dictionary<NotificationType, NotificationStyle> _notificationStyles = new()
+        {
+            { NotificationType.Error, new NotificationStyle(Colors.DarkRed, Colors.White, Colors.Black) },
+            { NotificationType.Notification, new NotificationStyle(Colors.Blue, Colors.White, Colors.Gray) }
+        };
 
         public MainPage()
         {
             InitializeComponent();
+            BindingContext = this;
         }
 
-        private async void OnLoadSongsClicked(object sender, EventArgs e)
+        protected override void OnAppearing()
         {
+            base.OnAppearing();
+            this.Window.MinimumHeight = 300;
+            this.Window.MinimumWidth = 600;
+        }
+
+        private void OnNotificationButtonClicked(object sender, EventArgs e)
+        {
+            NotificationBlock.IsVisible = false;
+        }
+
+        private void OnLoadSongsClicked(object sender, EventArgs e)
+        {
+            string path = PathEntry.Text;
+
             try
             {
-                // Считываем путь из текстового поля
-                string path = PathEntry.Text;
-
-                // Загружаем песни по указанному пути
                 _musicPlayer.LoadSongs(path);
+                var tracks = _musicPlayer.GetBuffer();
+                Tracks.Clear();
 
-                // Получаем список треков из буфера
-                List<Track> tracks = _musicPlayer.GetBuffer();
-
-                // Отображаем полученные треки в ListView
-                SongsListView.ItemsSource = tracks;
-            }
-            catch (Exception ex)
-            {
-                // При возникновении ошибки выводим всплывающее окно
-                await DisplayAlert("Ошибка", ex.Message, "OK");
-            }
-        }
-
-        private async void OnAddTrackClicked(object sender, EventArgs e)
-        {
-            try
-            {
-                // Получаем нажатую кнопку и трек из её BindingContext
-                Button addButton = sender as Button;
-                if (addButton == null)
-                    return;
-
-                Track track = addButton.BindingContext as Track;
-                if (track == null)
-                    return;
-
-                // Определяем индекс трека в локальном списке _tracks
-                int index = _musicPlayer.GetBuffer().IndexOf(track);
-                if (index < 0)
+                for (int i = 0; i < tracks.Count; i++)
                 {
-                    await DisplayAlert("Ошибка", "Трек не найден в списке.", "OK");
-                    return;
+                    Tracks.Add(new TrackViewModel(
+                        i,
+                        tracks[i].Title,
+                        tracks[i].Artist,
+                        FormatDuration(tracks[i].Duration),
+                        AddTrackToQueue));
                 }
 
-                // Добавляем трек в очередь, передавая индекс в массиве
-                _musicPlayer.AddTracksToQueueByIndices(new int[] { index });
-
-                await DisplayAlert("Информация", $"Трек '{track.Title}' добавлен в очередь.", "OK");
+                ShowNotification($"Loaded {tracks.Count} track(s).", "OK", NotificationType.Notification);
             }
             catch (Exception ex)
             {
-                await DisplayAlert("Ошибка", ex.Message, "OK");
+                ShowNotification(ex.Message, "Close", NotificationType.Error);
             }
+        }
+
+        private string FormatDuration(TimeSpan duration)
+        {
+            if (duration.Hours > 0)
+                return $"{duration.Hours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
+            else
+                return $"{duration.Minutes:D2}:{duration.Seconds:D2}";
+        }
+
+        private void AddTrackToQueue(int trackIndex)
+        {
+            try
+            {
+                _musicPlayer.AddTracksToQueueByIndices(new int[] { trackIndex });
+                ShowNotification("Track added to queue", "OK", NotificationType.Notification);
+            }
+            catch (Exception ex)
+            {
+                ShowNotification(ex.Message, "Close", NotificationType.Error);
+            }
+        }
+
+        private void ShowNotification(string message, string buttonText, NotificationType type)
+        {
+            if (!_notificationStyles.TryGetValue(type, out var style))
+                return;
+
+            NotificationLabel.Text = message;
+            NotificationButton.Text = buttonText;
+            NotificationBlock.IsVisible = true;
+
+            NotificationBlock.BackgroundColor = style.BackgroundColor;
+            NotificationLabel.TextColor = style.TextColor;
+            NotificationButton.BackgroundColor = style.ButtonColor;
         }
     }
 }
