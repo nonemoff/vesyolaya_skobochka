@@ -232,5 +232,10 @@ namespace MusicPlayerLib
             }
             return TimeSpan.Zero;
         }
+
+        public int GetCurrentTrackIndex()
+        {
+            return _queue.GetCurrentTrackIndex();
+        }
     }
 }

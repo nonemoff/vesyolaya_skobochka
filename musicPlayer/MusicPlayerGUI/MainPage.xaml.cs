@@ -1,4 +1,5 @@
 ﻿using Microsoft.Maui.Controls;
+using MusicPlayerGUI.ViewModels;
 
 namespace MusicPlayerGUI
 {

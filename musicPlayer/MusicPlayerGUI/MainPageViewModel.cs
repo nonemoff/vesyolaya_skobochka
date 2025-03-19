@@ -1,266 +1,471 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
+using System.Linq;
+using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Input;
+using System.Timers;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Maui.Controls;
 using MusicPlayerLib;
-using System.Collections.Generic;
 
-namespace MusicPlayerGUI
+namespace MusicPlayerGUI.ViewModels
 {
-    public enum NotificationType
+    public partial class MainPageViewModel : ObservableObject
     {
-        Error,
-        Notification
-    }
+        // Поля
+        private readonly MusicPlayer _musicPlayer;
+        private System.Timers.Timer _timer;
+        private CancellationTokenSource _notificationCts;
+        private bool _isSeeking = false;
 
-    public class NotificationStyle
-    {
-        public Color BackgroundColor { get; }
-        public Color TextColor { get; }
-        public Color ButtonColor { get; }
+        [ObservableProperty]
+        private string _path = string.Empty;
 
-        public NotificationStyle(Color backgroundColor, Color textColor, Color buttonColor)
-        {
-            BackgroundColor = backgroundColor;
-            TextColor = textColor;
-            ButtonColor = buttonColor;
-        }
-    }
+        [ObservableProperty]
+        private ObservableCollection<TrackItemViewModel> _tracks = new();
 
-    public class MainPageViewModel : INotifyPropertyChanged
-    {
-        private MusicPlayer _musicPlayer;
-        private bool _isBufferMode = true;
-        private string _modeLabel;
-        private string _toggleModeButtonText;
-        private string _songsPath;
-        private bool _notificationVisible;
-        private string _notificationMessage;
-        private string _notificationButtonText;
+        [ObservableProperty]
+        private ObservableCollection<string> _modes = new() { "Queue", "Buffer" };
 
-        public ObservableCollection<TrackViewModel> LoadedTracks { get; set; } = new ObservableCollection<TrackViewModel>();
-        public ObservableCollection<TrackViewModel> QueueTracks { get; set; } = new ObservableCollection<TrackViewModel>();
+        [ObservableProperty]
+        private string _selectedMode = "Buffer";
 
-        public string ModeLabel
-        {
-            get => _modeLabel;
-            set { _modeLabel = value; OnPropertyChanged(nameof(ModeLabel)); }
-        }
+        [ObservableProperty]
+        private string _currentTrackName;
 
-        public string ToggleModeButtonText
-        {
-            get => _toggleModeButtonText;
-            set { _toggleModeButtonText = value; OnPropertyChanged(nameof(ToggleModeButtonText)); }
-        }
+        [ObservableProperty]
+        private string _trackTime;
 
-        public string SongsPath
-        {
-            get => _songsPath;
-            set { _songsPath = value; OnPropertyChanged(nameof(SongsPath)); }
-        }
+        [ObservableProperty]
+        private double _trackProgress;
 
-        public bool NotificationVisible
-        {
-            get => _notificationVisible;
-            set { _notificationVisible = value; OnPropertyChanged(nameof(NotificationVisible)); }
-        }
+        [ObservableProperty]
+        private string _playPauseButtonText = "▶";
 
-        public string NotificationMessage
-        {
-            get => _notificationMessage;
-            set { _notificationMessage = value; OnPropertyChanged(nameof(NotificationMessage)); }
-        }
-
-        public string NotificationButtonText
-        {
-            get => _notificationButtonText;
-            set { _notificationButtonText = value; OnPropertyChanged(nameof(NotificationButtonText)); }
-        }
-
-        // Свойство для привязки коллекции треков, зависящее от режима
-        public ObservableCollection<TrackViewModel> DisplayedTracks => _isBufferMode ? LoadedTracks : QueueTracks;
-
-        public ICommand LoadSongsCommand { get; }
-        public ICommand ToggleModeCommand { get; }
-        public ICommand NotificationCommand { get; }
-
-        // Стили уведомлений
-        private readonly Dictionary<NotificationType, NotificationStyle> _notificationStyles = new()
-        {
-            { NotificationType.Error, new NotificationStyle(Colors.DarkRed, Colors.White, Colors.Black) },
-            { NotificationType.Notification, new NotificationStyle(Colors.Blue, Colors.White, Colors.Gray) }
-        };
-
-        public event PropertyChangedEventHandler PropertyChanged;
+        [ObservableProperty]
+        private string _notificationMessage = string.Empty;
 
         public MainPageViewModel()
         {
             _musicPlayer = new MusicPlayer();
-            ModeLabel = "Buffer";
-            ToggleModeButtonText = "Show Queue";
 
-            LoadSongsCommand = new AsyncCommand(LoadSongsAsync);
-            ToggleModeCommand = new Command(ToggleMode);
-            NotificationCommand = new Command(HideNotification);
+            _timer = new System.Timers.Timer(500);
+            _timer.Elapsed += (s, e) => UpdateTrackProgress();
+            _timer.Start();
         }
 
-        private async Task LoadSongsAsync()
+        partial void OnSelectedModeChanged(string value)
+        {
+            UpdateTracksBasedOnMode();
+        }
+
+        [RelayCommand]
+        private void LoadMusic()
         {
             try
             {
-                // Асинхронная загрузка песен (оборачиваем синхронный метод в Task.Run)
-                await Task.Run(() => _musicPlayer.LoadSongs(SongsPath));
-                var bufferTracks = _musicPlayer.GetBuffer();
-
-                LoadedTracks.Clear();
-                for (int i = 0; i < bufferTracks.Count; i++)
-                {
-                    var track = bufferTracks[i];
-                    LoadedTracks.Add(new TrackViewModel(
-                        i,
-                        track.Title,
-                        track.Artist,
-                        FormatDuration(track.Duration),
-                        AddTrackToQueue));
-                }
-                ShowNotification($"Loaded {bufferTracks.Count} track(s).", "OK", NotificationType.Notification);
-                OnPropertyChanged(nameof(DisplayedTracks));
+                _musicPlayer.LoadSongs(_path);
+                UpdateTracksBasedOnMode();
+                SetNotification("Music loaded successfully.");
             }
             catch (Exception ex)
             {
-                ShowNotification(ex.Message, "Close", NotificationType.Error);
+                SetNotification($"Music loading error: {ex.Message}");
             }
         }
 
-        private string FormatDuration(TimeSpan duration)
-        {
-            if (duration.Hours > 0)
-                return $"{duration.Hours:D2}:{duration.Minutes:D2}:{duration.Seconds:D2}";
-            else
-                return $"{duration.Minutes:D2}:{duration.Seconds:D2}";
-        }
-
-        private void ToggleMode()
-        {
-            _isBufferMode = !_isBufferMode;
-            if (_isBufferMode)
-            {
-                ModeLabel = "Buffer";
-                ToggleModeButtonText = "Show Queue";
-            }
-            else
-            {
-                ModeLabel = "Queue";
-                ToggleModeButtonText = "Show Buffer";
-                UpdateQueueTracks();
-            }
-            OnPropertyChanged(nameof(DisplayedTracks));
-        }
-
-        private void HideNotification()
-        {
-            NotificationVisible = false;
-        }
-
-        private void ShowNotification(string message, string buttonText, NotificationType type)
-        {
-            if (!_notificationStyles.TryGetValue(type, out var style))
-                return;
-
-            NotificationMessage = message;
-            NotificationButtonText = buttonText;
-            NotificationVisible = true;
-        }
-
-        private void AddTrackToQueue(int trackIndex)
+        [RelayCommand]
+        private void ShuffleQueue()
         {
             try
             {
-                _musicPlayer.AddTracksToQueueByIndices(new int[] { trackIndex });
-                ShowNotification("Track added to queue", "OK", NotificationType.Notification);
-                if (!_isBufferMode)
+                _musicPlayer.ShuffleQueue();
+                if (_selectedMode == "Queue")
                 {
-                    UpdateQueueTracks();
+                    UpdateTracksBasedOnMode();
+                }
+                SetNotification("Queue shuffled successfully.");
+            }
+            catch (Exception ex)
+            {
+                SetNotification($"Queue shuffle error: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void DeleteTrack(TrackItemViewModel trackItem)
+        {
+            try
+            {
+                if (_selectedMode != "Queue")
+                {
+                    SetNotification("Delete action is only available in Queue mode.");
+                    return;
+                }
+
+                int index = _tracks.IndexOf(trackItem);
+                if (index >= 0)
+                {
+                    // Если удаляемый трек является текущим, обрабатываем специальный сценарий.
+                    if (trackItem.IsCurrent)
+                    {
+                        // Получаем текущий индекс до удаления.
+                        int currentIndex = _musicPlayer.GetCurrentTrackIndex();
+
+                        // Удаляем трек из очереди.
+                        _musicPlayer.RemoveTracksFromQueueByIndices(new int[] { index });
+                        
+
+                        // Если в обновлённом списке есть трек с тем же индексом, воспроизводим его.
+                        if (_tracks.Count > currentIndex)
+                        {
+                            _musicPlayer.PlayTrack();
+                            SetNotification("Current track removed. Playing track at same index.");
+                        }
+                        // Если трек с тем же индексом отсутствует, но очередь не пуста, воспроизводим трек с индексом на 1 меньше.
+                        else if (_tracks.Count > 0)
+                        {
+                            _musicPlayer.PrevTrack();
+                            _musicPlayer.PlayTrack();
+                            SetNotification("Current track removed. Playing previous track.");
+                        }
+                        else
+                        {
+                            SetNotification("Current track removed. Queue is now empty.");
+                        }
+                        UpdateTracksBasedOnMode();
+                        UpdateCurrentTrackInfo();
+                    }
+                    else
+                    {
+                        _musicPlayer.RemoveTracksFromQueueByIndices(new int[] { index });
+                        UpdateTracksBasedOnMode();
+                        UpdateCurrentTrackInfo();
+                        SetNotification("Track removed from queue.");
+                    }
+                }
+                else
+                {
+                    SetNotification("Track not found in queue.");
                 }
             }
             catch (Exception ex)
             {
-                ShowNotification(ex.Message, "Close", NotificationType.Error);
+                SetNotification($"Delete track error: {ex.Message}");
             }
         }
 
-        private void UpdateQueueTracks()
+        [RelayCommand]
+        private void AddTrack(TrackItemViewModel trackItem)
         {
-            var queue = _musicPlayer.GetQueue();
-            QueueTracks.Clear();
-            for (int i = 0; i < queue.Count; i++)
+            try
             {
-                var track = queue[i];
-                QueueTracks.Add(new TrackViewModel(
-                    i,
-                    track.Title,
-                    track.Artist,
-                    FormatDuration(track.Duration),
-                    index => { } // Действие не требуется для треков в очереди
-                ));
+                if (_selectedMode == "Buffer")
+                {
+                    var bufferTracks = _musicPlayer.GetBuffer();
+                    int index = bufferTracks.FindIndex(t => t.FullPath == trackItem.FullPath);
+                    if (index >= 0)
+                    {
+                        _musicPlayer.AddTracksToQueueByIndices(new int[] { index });
+                        if (_selectedMode == "Queue")
+                        {
+                            UpdateTracksBasedOnMode();
+                        }
+                        SetNotification("Track added to queue.");
+                    }
+                }
             }
-            OnPropertyChanged(nameof(DisplayedTracks));
+            catch (Exception ex)
+            {
+                SetNotification($"Track addition error: {ex.Message}");
+            }
         }
 
-        protected void OnPropertyChanged(string name)
+        [RelayCommand]
+        private void PreviousTrack()
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            try
+            {
+                _musicPlayer.PrevTrack();
+                _musicPlayer.PlayTrack();
+                PlayPauseButtonText = "||";
+                UpdateCurrentTrackInfo();
+                SetNotification("Playing previous track.");
+            }
+            catch (Exception ex)
+            {
+                SetNotification($"Previous track error: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void PlayPause()
+        {
+            try
+            {
+                if (PlayPauseButtonText == "▶")
+                {
+                    _musicPlayer.PlayTrack();
+                    PlayPauseButtonText = "||";
+                    UpdateCurrentTrackInfo();
+                    SetNotification("Playing track.");
+                }
+                else
+                {
+                    _musicPlayer.PauseTrack();
+                    PlayPauseButtonText = "▶";
+                    SetNotification("Track paused.");
+                }
+            }
+            catch (Exception ex)
+            {
+                SetNotification($"Play/Pause error: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void NextTrack()
+        {
+            try
+            {
+                _musicPlayer.NextTrack();
+                _musicPlayer.PlayTrack();
+                PlayPauseButtonText = "||";
+                UpdateCurrentTrackInfo();
+                SetNotification("Playing next track.");
+            }
+            catch (Exception ex)
+            {
+                PlayPause();
+                SetNotification($"Next track error: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void SliderDragCompleted(double sliderValue)
+        {
+            _isSeeking = true; // ❌ Блокируем обновление TrackProgress
+
+            try
+            {
+                var totalTime = _musicPlayer.GetCurrentTrackTotalDuration();
+                if (totalTime.TotalSeconds > 0)
+                {
+                    double desiredSeconds = (sliderValue / 100.0) * totalTime.TotalSeconds;
+                    _musicPlayer.SeekTrack(desiredSeconds.ToString());
+                    UpdateCurrentTrackInfo();
+                    SetNotification("Track position updated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                SetNotification($"Seek error: {ex.Message}");
+            }
+            finally
+            {
+                _isSeeking = false; // ✅ Разблокируем обновление TrackProgress
+            }
+        }
+
+        [RelayCommand]
+        private void SliderValueChanged(double sliderValue)
+        {
+            if (_isSeeking || _isUpdatingProgress) return;
+
+            try
+            {
+                var totalTime = _musicPlayer.GetCurrentTrackTotalDuration();
+                if (totalTime.TotalSeconds > 0)
+                {
+                    _isSeeking = true;
+                    double desiredSeconds = (sliderValue / 100.0) * totalTime.TotalSeconds;
+                    _musicPlayer.SeekTrack(desiredSeconds.ToString());
+                    UpdateCurrentTrackInfo();
+                    SetNotification("Track position updated.");
+                }
+            }
+            catch (Exception ex)
+            {
+                SetNotification($"Seek error: {ex.Message}");
+            }
+            finally
+            {
+                _isSeeking = false;
+            }
+        }
+
+        private void UpdateTracksBasedOnMode()
+        {
+            try
+            {
+                _tracks.Clear();
+                var list = _selectedMode == "Queue" ? _musicPlayer.GetQueue() : _musicPlayer.GetBuffer();
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var tivm = new TrackItemViewModel(list[i]);
+                    // В режиме Queue первый элемент считается текущим при первоначальном заполнении
+                    tivm.IsCurrent = (_selectedMode == "Queue" && i == 0);
+                    _tracks.Add(tivm);
+                }
+            }
+            catch (Exception ex)
+            {
+                SetNotification($"Error updating track list: {ex.Message}");
+            }
+        }
+
+        private void UpdateCurrentTrackInfo()
+        {
+            try
+            {
+                var currentQueue = _musicPlayer.GetQueue();
+                if (currentQueue.Count > 0)
+                {
+                    int currentIndex = _musicPlayer.GetCurrentTrackIndex();
+                    var currentTrack = currentQueue[currentIndex];
+                    CurrentTrackName = currentTrack.Title;
+                    var currentTime = _musicPlayer.GetCurrentTrackTime();
+                    var totalTime = _musicPlayer.GetCurrentTrackTotalDuration();
+                    TrackTime = $"{currentTime:mm\\:ss} / {totalTime:mm\\:ss}";
+
+                    // ✅ Обновляем свойство IsCurrent для каждого трека
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        for (int i = 0; i < Tracks.Count; i++)
+                        {
+                            Tracks[i].IsCurrent = (i == currentIndex);
+                        }
+                    });
+                }
+                else
+                {
+                    CurrentTrackName = string.Empty;
+                    TrackTime = "00:00 / 00:00";
+                }
+            }
+            catch (Exception ex)
+            {
+                SetNotification($"Error updating track info: {ex.Message}");
+            }
+        }
+
+        private bool _isUpdatingProgress = false;
+
+        private void UpdateTrackProgress()
+        {
+            if (_isSeeking) return; // 🔥 Если пользователь двигает слайдер, не трогаем
+
+            try
+            {
+                var currentTime = _musicPlayer.GetCurrentTrackTime();
+                var totalTime = _musicPlayer.GetCurrentTrackTotalDuration();
+
+                if (totalTime.TotalSeconds > 0)
+                {
+                    MainThread.BeginInvokeOnMainThread(() =>
+                    {
+                        if (_isSeeking) return; // 🔥 Двойная защита, если пользователь всё ещё двигает
+
+                        _isUpdatingProgress = true; // ✅ Блокируем обратное обновление в SliderValueChanged
+                        TrackProgress = currentTime.TotalSeconds / totalTime.TotalSeconds * 100;
+                        TrackTime = $"{currentTime:mm\\:ss} / {totalTime:mm\\:ss}";
+                        _isUpdatingProgress = false; // 🔓 Разблокируем обновление
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                SetNotification($"Error updating progress: {ex.Message}");
+            }
+        }
+
+        private async void SetNotification(string message)
+        {
+            if (_notificationCts != null)
+            {
+                _notificationCts.Cancel();
+                _notificationCts.Dispose();
+            }
+            _notificationCts = new CancellationTokenSource();
+
+            MainThread.BeginInvokeOnMainThread(() => { NotificationMessage = message; });
+
+            try
+            {
+                await Task.Delay(3000, _notificationCts.Token);
+                MainThread.BeginInvokeOnMainThread(() => { NotificationMessage = string.Empty; });
+            }
+            catch (TaskCanceledException)
+            {
+                // Если был вызван новый SetNotification, ничего не делаем.
+            }
         }
     }
 
-    // Реализация команды для асинхронных операций
-    public class AsyncCommand : ICommand
+    public partial class TrackItemViewModel : ObservableObject
     {
-        private readonly Func<Task> _execute;
-        private readonly Func<bool> _canExecute;
+        private readonly Track _track;
 
-        public AsyncCommand(Func<Task> execute, Func<bool> canExecute = null)
+        [ObservableProperty]
+        private bool _isCurrent;
+
+        public TrackItemViewModel(Track track)
         {
-            _execute = execute;
-            _canExecute = canExecute;
+            _track = track;
         }
 
-        public bool CanExecute(object parameter)
+        public string FullPath => _track.FullPath;
+        public string TrackName => _track.Title;
+        public string TrackArtist => _track.Artist;
+        public string Duration => _track.Duration.ToString(@"mm\:ss");
+    }
+
+    // Конвертер для получения значения слайдера при DragCompleted.
+    public class SliderValueConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return _canExecute == null || _canExecute();
+            if (parameter is Slider slider)
+            {
+                return slider.Value;
+            }
+            if (value is int intValue)
+            {
+                return (double)intValue;
+            }
+            if (value is double doubleValue)
+            {
+                return doubleValue;
+            }
+            return 0.0;
         }
 
-        public event EventHandler CanExecuteChanged;
-
-        public async void Execute(object parameter)
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            await _execute();
-        }
-
-        public void RaiseCanExecuteChanged()
-        {
-            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+            throw new NotImplementedException();
         }
     }
 
-    // ViewModel для отдельного трека
-    public class TrackViewModel
+    // Конвертер для извлечения нового значения (NewValue) из ValueChangedEventArgs.
+    public class ValueChangedEventArgsConverter : IValueConverter
     {
-        public string Title { get; set; }
-        public string Artist { get; set; }
-        public string Duration { get; set; }
-        public int Index { get; set; }
-        public ICommand AddToQueueCommand { get; set; }
-
-        public TrackViewModel(int index, string title, string artist, string duration, Action<int> addToQueueAction)
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            Index = index;
-            Title = title;
-            Artist = artist;
-            Duration = duration;
-            AddToQueueCommand = new Command(() => addToQueueAction(Index));
+            if (value is ValueChangedEventArgs args)
+            {
+                return args.NewValue;
+            }
+            return 0.0;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
         }
     }
 }

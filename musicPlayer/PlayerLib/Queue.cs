@@ -65,29 +65,40 @@ namespace MusicPlayerLib
             var invalidIndices = indices.Where(i => !ValidateIndex(i)).ToArray();
             if (invalidIndices.Any())
             {
-                throw new ArgumentOutOfRangeException(nameof(indices), $"Invalid indices: {string.Join(", ", invalidIndices)}. Valid range is 0 - {_queue.Count - 1}.");
+                throw new ArgumentOutOfRangeException(nameof(indices),
+                    $"Invalid indices: {string.Join(", ", invalidIndices)}. Valid range is 0 - {_queue.Count - 1}.");
             }
 
-
+            // Удаляем треки, сортируя индексы по убыванию, чтобы не нарушить порядок удаления.
             var sortedIndices = indices.OrderByDescending(i => i).ToArray();
             foreach (int index in sortedIndices)
             {
                 _queue.RemoveAt(index);
+            }
 
-                if (_queue.Count == 0)
+            if (_queue.Count == 0)
+            {
+                _currentTrackIndex = -1;
+                return;
+            }
+
+            // Вычисляем, сколько треков, находящихся до текущего, было удалено.
+            int removedBeforeCurrent = indices.Count(i => i < _currentTrackIndex);
+            bool isCurrentRemoved = indices.Contains(_currentTrackIndex);
+
+            int newIndex = _currentTrackIndex - removedBeforeCurrent;
+            if (isCurrentRemoved)
+            {
+                // Если трек был удалён, пытаемся сохранить тот же индекс.
+                // Если по новому индексу элемента нет, выбираем последний трек.
+                if (newIndex >= _queue.Count)
                 {
-                    _currentTrackIndex = -1;
-                    return;
-                }
-                else if (index < _currentTrackIndex)
-                {
-                    _currentTrackIndex--;
-                }
-                else if (index == _currentTrackIndex && _currentTrackIndex >= _queue.Count)
-                {
-                    _currentTrackIndex = 0;
+                    newIndex = _queue.Count - 1;
                 }
             }
+            // Если текущий трек не удалён, newIndex уже корректен.
+
+            _currentTrackIndex = newIndex;
         }
 
 

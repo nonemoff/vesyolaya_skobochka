@@ -1,138 +1,170 @@
-﻿<?xml version="1.0" encoding="UTF-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage 
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    x:Class="MusicPlayerGUI.MainPage">
-    <Grid Padding="20" RowSpacing="15"
-        VerticalOptions="FillAndExpand"
-        HorizontalOptions="FillAndExpand">
+    xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+    xmlns:local="clr-namespace:MusicPlayerGUI.ViewModels"
+    x:Class="MusicPlayerGUI.MainPage"
+    x:Name="RootPage">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Регистрируем конвертер для ValueChanged -->
+            <local:ValueChangedEventArgsConverter x:Key="ValueChangedEventArgsConverter"/>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <Grid>
         <Grid.RowDefinitions>
-            <!-- Row 0: Ввод пути и кнопка "Load Songs" -->
+            <!-- Path entry and Load Songs -->
             <RowDefinition Height="Auto"/>
-            <!-- Row 1: Переключатель для выбора режима -->
+            <!-- Picker and Shuffle -->
             <RowDefinition Height="Auto"/>
-            <!-- Row 2: Список треков -->
+            <!-- Tracks -->
             <RowDefinition Height="*"/>
-            <!-- Row 3: Блок уведомлений -->
+            <!-- Statusbar, Control Buttons, Slider and Notification Label -->
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
 
-        <!-- Row 0 -->
-        <Entry Text="{Binding SongsPath}" 
-           Placeholder="Enter path to songs directory"
-           FontSize="14"
-           Grid.Row="0"
-           Grid.Column="0"
-           HorizontalOptions="Fill"
-           Margin="0,5,5,0"/>
-        <Button Text="Load Songs"
-            Command="{Binding LoadSongsCommand}"
-            BackgroundColor="Blue"
-            TextColor="White"
-            Grid.Row="0"
-            Grid.Column="1"
-            HorizontalOptions="End"
-            Margin="0,5,0,0"/>
+        <!-- Path entry and Load Songs -->
+        <Grid Grid.Row="0" Padding="40,10,40,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="9*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Entry Text="{Binding Path}" 
+                   Placeholder="Input path to music folder" 
+                   Margin="0,0,5,0"/>
+            <Button Text="Load Music" 
+                    Command="{Binding LoadMusicCommand}" 
+                    Grid.Column="1"/>
+        </Grid>
 
-        <!-- Row 1: Переключатель режимов -->
-        <StackLayout Grid.Row="1" Grid.ColumnSpan="2" 
-                 Orientation="Horizontal" 
-                 HorizontalOptions="FillAndExpand" 
-                 VerticalOptions="Center">
-            <Label Text="{Binding ModeLabel}" 
-             FontSize="24" 
-             VerticalOptions="Center" 
-             HorizontalOptions="Start"/>
-            <BoxView BackgroundColor="Transparent" 
-               HorizontalOptions="FillAndExpand"/>
-            <Button Text="{Binding ToggleModeButtonText}" 
-              Command="{Binding ToggleModeCommand}"
-              Margin="10,0"  
-              HorizontalOptions="End"/>
-        </StackLayout>
+        <!-- Picker and Shuffle -->
+        <Grid Grid.Row="1" Padding="40,10,40,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="9*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Picker ItemsSource="{Binding Modes}" 
+                    SelectedItem="{Binding SelectedMode, Mode=TwoWay}" 
+                    Margin="0,0,5,0"
+                    Grid.Column="0"/>
+            <Button Text="Shuffle Queue" 
+                    Command="{Binding ShuffleQueueCommand}"
+                    Margin="5,0,0,0" 
+                    Grid.Column="1"/>
+        </Grid>
 
-        <!-- Row 2: Список треков -->
-        <CollectionView ItemsSource="{Binding DisplayedTracks}"
-                    Grid.Row="2"
-                    Grid.ColumnSpan="2"
-                    SelectionMode="None">
+        <!-- Tracks -->
+        <CollectionView ItemsSource="{Binding Tracks}" Grid.Row="2">
             <CollectionView.ItemTemplate>
                 <DataTemplate>
-                    <Frame Padding="10" Margin="5" BackgroundColor="LightGray" CornerRadius="5">
-                        <Grid ColumnSpacing="10" RowSpacing="3">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Label Text="{Binding Title}"
-                     FontSize="16"
-                     FontAttributes="Bold"
-                     Grid.Row="0"
-                     Grid.Column="0"
-                     VerticalOptions="Center"
-                     HorizontalOptions="Start"/>
-                            <Label Text="{Binding Duration}"
-                     FontSize="16"
-                     FontAttributes="Bold"
-                     Grid.Row="0"
-                     Grid.Column="1"
-                     VerticalOptions="Center"
-                     HorizontalOptions="End"/>
-                            <Label Text="{Binding Artist}"
-                     FontSize="14"
-                     Grid.Row="1"
-                     Grid.Column="0"
-                     Grid.ColumnSpan="2"
-                     VerticalOptions="Center"
-                     HorizontalOptions="Start"/>
-                            <Button Text="Add"
-                      FontSize="16"
-                      BackgroundColor="Transparent"
-                      TextColor="Black"
-                      BorderWidth="0"
-                      Command="{Binding AddToQueueCommand}"
-                      CommandParameter="{Binding}"
-                      Grid.Row="0"
-                      Grid.RowSpan="2"
-                      Grid.Column="2"
-                      VerticalOptions="Center"
-                      HorizontalOptions="End"/>
-                        </Grid>
-                    </Frame>
+                    <Grid Padding="40" ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <!-- Отображение данных трека -->
+                        <Label Grid.Column="0" Grid.Row="0" Text="{Binding TrackName}" FontAttributes="Bold"/>
+                        <Label Grid.Column="0" Grid.Row="1" Text="{Binding TrackArtist}"/>
+                        <Label Grid.Column="1" Grid.Row="0" Text="{Binding Duration}" 
+                       VerticalOptions="Center" HorizontalOptions="Center" 
+                       Grid.RowSpan="2"/>
+                        <!-- Кнопка Add или Delete -->
+                        <Button x:Name="ActionButton"
+                        Grid.Column="2" Grid.Row="0"
+                        Text="Add" 
+                        Command="{Binding Source={x:Reference RootPage}, Path=BindingContext.AddTrackCommand}"
+                        CommandParameter="{Binding .}"
+                        VerticalOptions="Center" Grid.RowSpan="2">
+                            <Button.Triggers>
+                                <DataTrigger TargetType="Button" 
+                                     Binding="{Binding Source={x:Reference RootPage}, Path=BindingContext.SelectedMode}" 
+                                     Value="Queue">
+                                    <Setter Property="Text" Value="Delete"/>
+                                    <Setter Property="Command" Value="{Binding Source={x:Reference RootPage}, Path=BindingContext.DeleteTrackCommand}"/>
+                                </DataTrigger>
+                            </Button.Triggers>
+                        </Button>
+                        <!-- Подсветка текущего трека -->
+                        <Grid.Triggers>
+                            <DataTrigger TargetType="Grid" Binding="{Binding IsCurrent}" Value="True">
+                                <Setter Property="BackgroundColor" Value="LightGreen"/>
+                            </DataTrigger>
+                        </Grid.Triggers>
+                    </Grid>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <!-- Row 3: Блок уведомлений -->
-        <StackLayout Orientation="Horizontal"
-                 BackgroundColor="LightGray"
-                 Padding="10"
-                 Margin="0,10,0,0"
-                 IsVisible="{Binding NotificationVisible}"
-                 Grid.Row="3"
-                 Grid.ColumnSpan="2"
-                 HorizontalOptions="Fill">
-            <Label Text="{Binding NotificationMessage}"
-             FontSize="14"
-             TextColor="White"
-             VerticalOptions="Center"
-             HorizontalOptions="FillAndExpand"
-             Margin="0,0,10,0"/>
-            <Button Text="{Binding NotificationButtonText}"
-              Command="{Binding NotificationCommand}"
-              BackgroundColor="Gray"
-              TextColor="White"
-              VerticalOptions="Center"
-              HorizontalOptions="End"/>
-        </StackLayout>
+        <!-- Statusbar, Control Buttons, Slider and Notification Label -->
+        <Grid Grid.Row="3" Padding="40">
+            <Grid.RowDefinitions>
+                <!-- Control Buttons and Track Info -->
+                <RowDefinition Height="Auto"/>
+                <!-- Slider -->
+                <RowDefinition Height="Auto"/>
+                <!-- Notification Label -->
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Control Buttons and Track Info -->
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Label Grid.Column="0" Text="{Binding CurrentTrackName}" 
+                       HorizontalOptions="Start" VerticalOptions="Center" 
+                       TextColor="White" FontAttributes="Bold"/>
+                <Grid Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Text="&lt;" 
+                            Command="{Binding PreviousTrackCommand}" 
+                            FontAttributes="Bold" WidthRequest="50" HeightRequest="50" 
+                            CornerRadius="25" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Button Grid.Column="1" Text="{Binding PlayPauseButtonText}" 
+                            Command="{Binding PlayPauseCommand}" 
+                            FontAttributes="Bold" WidthRequest="50" HeightRequest="50" 
+                            CornerRadius="25" Margin="5" HorizontalOptions="Center" VerticalOptions="Center"/>
+                    <Button Grid.Column="2" Text="&gt;" 
+                            Command="{Binding NextTrackCommand}" 
+                            FontAttributes="Bold" WidthRequest="50" HeightRequest="50" 
+                            CornerRadius="25" HorizontalOptions="Center" VerticalOptions="Center"/>
+                </Grid>
+                <Label Grid.Column="2" Text="{Binding TrackTime}" 
+                       HorizontalOptions="End" VerticalOptions="Center" 
+                       TextColor="White"/>
+            </Grid>
+
+            <!-- Slider с привязкой команды через EventToCommandBehavior -->
+            <Slider x:Name="TrackProgressSlider"
+                    Minimum="0" 
+                    Maximum="100" 
+                    Value="{Binding TrackProgress, Mode=TwoWay}"
+                    Grid.Row="1" VerticalOptions="Center">
+                <Slider.Behaviors>
+                    <toolkit:EventToCommandBehavior 
+                        EventName="ValueChanged"
+                        Command="{Binding SliderValueChangedCommand}"
+                        EventArgsConverter="{StaticResource ValueChangedEventArgsConverter}" />
+                </Slider.Behaviors>
+            </Slider>
+
+            <!-- Notification Label -->
+            <Label Grid.Row="2" Text="{Binding NotificationMessage}" 
+                   HorizontalOptions="Center" TextColor="White"/>
+        </Grid>
     </Grid>
 </ContentPage>
