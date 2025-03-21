@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MoodDiary.MoodEntryPage"
+             Title="Запись настроения">
+    <StackLayout Padding="20">
+        <Label Text="Отметьте ваше настроение:" 
+               FontSize="Large" 
+               HorizontalOptions="Center" />
+        <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Center" Margin="10">
+            <!-- Кнопки для выбора настроения -->
+            <Button Text="Счастлив" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="0"/>
+            <Button Text="Радостен" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="1"/>
+            <Button Text="Спокоен" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="2"/>
+            <Button Text="Нейтрален" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="3"/>
+            <Button Text="Озадачен" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="4"/>
+            <Button Text="Грустен" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="5"/>
+            <Button Text="Злюсь" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="6"/>
+            <Button Text="Разочарован" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="7"/>
+            <Button Text="Тревожен" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="8"/>
+            <Button Text="Подавлен" Clicked="OnMoodButtonClicked" Margin="5" CommandParameter="9"/>
+        </FlexLayout>
+    </StackLayout>
+</ContentPage>
