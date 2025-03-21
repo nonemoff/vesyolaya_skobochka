@@ -17,7 +17,6 @@ namespace MusicPlayerGUI.ViewModels
 {
     public partial class MainPageViewModel : ObservableObject
     {
-        // Поля
         private readonly MusicPlayer _musicPlayer;
         private System.Timers.Timer _timer;
         private CancellationTokenSource _notificationCts;
@@ -111,23 +110,16 @@ namespace MusicPlayerGUI.ViewModels
                 int index = _tracks.IndexOf(trackItem);
                 if (index >= 0)
                 {
-                    // Если удаляемый трек является текущим, обрабатываем специальный сценарий.
                     if (trackItem.IsCurrent)
                     {
-                        // Получаем текущий индекс до удаления.
                         int currentIndex = _musicPlayer.GetCurrentTrackIndex();
-
-                        // Удаляем трек из очереди.
                         _musicPlayer.RemoveTracksFromQueueByIndices(new int[] { index });
-                        
 
-                        // Если в обновлённом списке есть трек с тем же индексом, воспроизводим его.
                         if (_tracks.Count > currentIndex)
                         {
                             _musicPlayer.PlayTrack();
                             SetNotification("Current track removed. Playing track at same index.");
                         }
-                        // Если трек с тем же индексом отсутствует, но очередь не пуста, воспроизводим трек с индексом на 1 меньше.
                         else if (_tracks.Count > 0)
                         {
                             _musicPlayer.PrevTrack();
@@ -249,7 +241,7 @@ namespace MusicPlayerGUI.ViewModels
         [RelayCommand]
         private void SliderDragCompleted(double sliderValue)
         {
-            _isSeeking = true; // ❌ Блокируем обновление TrackProgress
+            _isSeeking = true;
 
             try
             {
@@ -268,7 +260,7 @@ namespace MusicPlayerGUI.ViewModels
             }
             finally
             {
-                _isSeeking = false; // ✅ Разблокируем обновление TrackProgress
+                _isSeeking = false;
             }
         }
 
@@ -308,7 +300,6 @@ namespace MusicPlayerGUI.ViewModels
                 for (int i = 0; i < list.Count; i++)
                 {
                     var tivm = new TrackItemViewModel(list[i]);
-                    // В режиме Queue первый элемент считается текущим при первоначальном заполнении
                     tivm.IsCurrent = (_selectedMode == "Queue" && i == 0);
                     _tracks.Add(tivm);
                 }
@@ -333,7 +324,6 @@ namespace MusicPlayerGUI.ViewModels
                     var totalTime = _musicPlayer.GetCurrentTrackTotalDuration();
                     TrackTime = $"{currentTime:mm\\:ss} / {totalTime:mm\\:ss}";
 
-                    // ✅ Обновляем свойство IsCurrent для каждого трека
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
                         for (int i = 0; i < Tracks.Count; i++)
@@ -358,7 +348,7 @@ namespace MusicPlayerGUI.ViewModels
 
         private void UpdateTrackProgress()
         {
-            if (_isSeeking) return; // 🔥 Если пользователь двигает слайдер, не трогаем
+            if (_isSeeking) return;
 
             try
             {
@@ -369,12 +359,12 @@ namespace MusicPlayerGUI.ViewModels
                 {
                     MainThread.BeginInvokeOnMainThread(() =>
                     {
-                        if (_isSeeking) return; // 🔥 Двойная защита, если пользователь всё ещё двигает
+                        if (_isSeeking) return;
 
-                        _isUpdatingProgress = true; // ✅ Блокируем обратное обновление в SliderValueChanged
+                        _isUpdatingProgress = true;
                         TrackProgress = currentTime.TotalSeconds / totalTime.TotalSeconds * 100;
                         TrackTime = $"{currentTime:mm\\:ss} / {totalTime:mm\\:ss}";
-                        _isUpdatingProgress = false; // 🔓 Разблокируем обновление
+                        _isUpdatingProgress = false;
                     });
                 }
             }
@@ -400,10 +390,7 @@ namespace MusicPlayerGUI.ViewModels
                 await Task.Delay(3000, _notificationCts.Token);
                 MainThread.BeginInvokeOnMainThread(() => { NotificationMessage = string.Empty; });
             }
-            catch (TaskCanceledException)
-            {
-                // Если был вызван новый SetNotification, ничего не делаем.
-            }
+            catch (TaskCanceledException) { }
         }
     }
 
@@ -425,7 +412,6 @@ namespace MusicPlayerGUI.ViewModels
         public string Duration => _track.Duration.ToString(@"mm\:ss");
     }
 
-    // Конвертер для получения значения слайдера при DragCompleted.
     public class SliderValueConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -451,7 +437,6 @@ namespace MusicPlayerGUI.ViewModels
         }
     }
 
-    // Конвертер для извлечения нового значения (NewValue) из ValueChangedEventArgs.
     public class ValueChangedEventArgsConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

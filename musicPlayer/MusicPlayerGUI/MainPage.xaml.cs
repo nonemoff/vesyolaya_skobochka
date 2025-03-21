@@ -8,7 +8,6 @@ namespace MusicPlayerGUI
         public MainPage()
         {
             InitializeComponent();
-            // Устанавливаем BindingContext в экземпляр MainPageViewModel
             BindingContext = new MainPageViewModel();
         }
     }

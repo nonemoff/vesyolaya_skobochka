@@ -148,7 +148,7 @@
                        TextColor="White"/>
             </Grid>
 
-            <!-- Slider с привязкой команды через EventToCommandBehavior -->
+            <!-- Slider -->
             <Slider x:Name="TrackProgressSlider"
                     Minimum="0" 
                     Maximum="100" 
