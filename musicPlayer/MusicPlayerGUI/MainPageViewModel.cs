@@ -52,6 +52,7 @@ namespace MusicPlayerGUI.ViewModels
         public MainPageViewModel()
         {
             _musicPlayer = new MusicPlayer();
+            _musicPlayer.TrackFinished += OnTrackFinished;
 
             _timer = new System.Timers.Timer(500);
             _timer.Elapsed += (s, e) => UpdateTrackProgress();
@@ -61,6 +62,15 @@ namespace MusicPlayerGUI.ViewModels
         partial void OnSelectedModeChanged(string value)
         {
             UpdateTracksBasedOnMode();
+        }
+
+        private void OnTrackFinished(object? sender, EventArgs e)
+        {
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                UpdateTracksBasedOnMode();
+                UpdateCurrentTrackInfo();
+            });
         }
 
         [RelayCommand]

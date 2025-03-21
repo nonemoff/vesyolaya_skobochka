@@ -22,6 +22,7 @@ namespace MusicPlayerLib
         private IWavePlayer _waveOut;
         private AudioFileReader _audioFileReader;
         private PlayerState _playerState = PlayerState.Stopped;
+        public event EventHandler? TrackFinished;
 
         public void LoadSongs(string? path)
         {
@@ -207,10 +208,12 @@ namespace MusicPlayerLib
                 try
                 {
                     NextTrack();
+                    TrackFinished?.Invoke(this, EventArgs.Empty);
                 }
                 catch (ArgumentOutOfRangeException)
                 {
                     StopPlayback();
+                    TrackFinished?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
