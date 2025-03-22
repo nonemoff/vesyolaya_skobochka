@@ -9,9 +9,6 @@
     <MauiXaml Update="Pages\WeeklyStatisticsPage.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
-    <MauiXaml Update="Pages\DayDynamicsPage.xaml">
-      <SubType>Designer</SubType>
-    </MauiXaml>
     <MauiXaml Update="Pages\MoodEntryPage.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>

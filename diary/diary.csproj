@@ -69,9 +69,6 @@
 	  <Compile Update="Pages\WeeklyStatisticsPage.xaml.cs">
 	    <DependentUpon>WeeklyStatisticsPage.xaml</DependentUpon>
 	  </Compile>
-	  <Compile Update="Pages\DayDynamicsPage.xaml.cs">
-	    <DependentUpon>DayDynamicsPage.xaml</DependentUpon>
-	  </Compile>
 	  <Compile Update="Pages\MoodEntryPage.xaml.cs">
 	    <DependentUpon>MoodEntryPage.xaml</DependentUpon>
 	  </Compile>
@@ -79,9 +76,6 @@
 
 	<ItemGroup>
 	  <MauiXaml Update="Pages\WeeklyStatisticsPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Pages\DayDynamicsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\MoodEntryPage.xaml">
