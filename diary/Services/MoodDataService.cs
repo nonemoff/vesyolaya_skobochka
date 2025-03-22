@@ -16,8 +16,6 @@ namespace MoodDiary.Services
 
         private static List<MoodEntry> entries = new List<MoodEntry>();
         private static bool isLoaded = false;
-
-        // Настройки сериализации с обрезкой миллисекунд
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
             WriteIndented = true,
@@ -36,8 +34,6 @@ namespace MoodDiary.Services
                     using var stream = File.OpenRead(FilePath);
                     entries = await JsonSerializer.DeserializeAsync<List<MoodEntry>>(stream, JsonOptions)
                         ?? new List<MoodEntry>();
-
-                    // Удалим дробную часть секунд, если вдруг была в файле
                     foreach (var entry in entries)
                         entry.Timestamp = entry.Timestamp.AddTicks(-(entry.Timestamp.Ticks % TimeSpan.TicksPerSecond));
                 }
@@ -50,7 +46,6 @@ namespace MoodDiary.Services
             }
             catch (Exception ex)
             {
-                // Добавь логирование при необходимости
                 entries = new List<MoodEntry>();
             }
         }
@@ -59,7 +54,6 @@ namespace MoodDiary.Services
         {
             try
             {
-                // Гарантируем округление до секунды перед сохранением
                 foreach (var entry in entries)
                     entry.Timestamp = entry.Timestamp.AddTicks(-(entry.Timestamp.Ticks % TimeSpan.TicksPerSecond));
 
@@ -68,7 +62,6 @@ namespace MoodDiary.Services
             }
             catch (Exception ex)
             {
-                // Обработка ошибок при записи
             }
         }
 

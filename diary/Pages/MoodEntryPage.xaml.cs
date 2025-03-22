@@ -13,14 +13,9 @@ namespace MoodDiary
 {
     public partial class MoodEntryPage : ContentPage
     {
-        // Коллекции для отображения данных
         public ObservableCollection<MoodViewModel> DayMoods { get; set; } = new ObservableCollection<MoodViewModel>();
         public ObservableCollection<WeekDayStatViewModel> WeeklyStats { get; set; } = new ObservableCollection<WeekDayStatViewModel>();
-
-        // Таймер для обновления линии текущего времени
         private IDispatcherTimer _timeUpdateTimer;
-
-        // Текущая дата для отображения
         private DateTime _currentDate = DateTime.Today;
 
         public MoodEntryPage()
@@ -29,10 +24,10 @@ namespace MoodDiary
             TodayMoodsCollectionView.ItemsSource = DayMoods;
             WeeklyStatsCollectionView.ItemsSource = WeeklyStats;
 
-            // Настройка таймера для обновления линии текущего времени
+            
             _timeUpdateTimer = Dispatcher.CreateTimer();
-            _timeUpdateTimer.Interval = TimeSpan.FromMinutes(1); // Обновление каждую минуту
-            _timeUpdateTimer.Tick += (s, e) => DrawMoodChart(); // Перерисовка графика каждый раз
+            _timeUpdateTimer.Interval = TimeSpan.FromMinutes(1);
+            _timeUpdateTimer.Tick += (s, e) => DrawMoodChart();
 
             UpdateDateDisplay();
         }
@@ -41,16 +36,12 @@ namespace MoodDiary
         {
             base.OnAppearing();
             await LoadDataAsync();
-
-            // Запуск таймера, когда страница становится видимой
             _timeUpdateTimer.Start();
         }
 
         protected override void OnDisappearing()
         {
             base.OnDisappearing();
-
-            // Остановка таймера, когда страница исчезает
             _timeUpdateTimer.Stop();
         }
 
@@ -80,8 +71,6 @@ namespace MoodDiary
             {
                 DayMoods.Add(m);
             }
-
-            // Обновляем заголовок для списка записей
             DayRecordsLabel.Text = _currentDate.Date == DateTime.Today.Date
                 ? "Записи за сегодня:"
                 : $"Записи за {_currentDate:dd.MM.yyyy}:";
@@ -91,19 +80,15 @@ namespace MoodDiary
         {
             await MoodDataService.LoadEntriesAsync();
             WeeklyStats.Clear();
-
-            // Определяем начало и конец недели (понедельник - воскресенье)
             DateTime today = DateTime.Today;
             int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
             DateTime startOfWeek = today.AddDays(-diff);
             DateTime endOfWeek = startOfWeek.AddDays(6);
 
-            // Получаем все данные за неделю
             var weekEntries = MoodDataService.GetEntries()
                 .Where(x => x.Timestamp.Date >= startOfWeek && x.Timestamp.Date <= endOfWeek)
                 .ToList();
 
-            // Группируем данные по дням и вычисляем среднее настроение
             for (DateTime date = startOfWeek; date <= endOfWeek; date = date.AddDays(1))
             {
                 var dayEntries = weekEntries.Where(x => x.Timestamp.Date == date.Date).ToList();
@@ -122,7 +107,6 @@ namespace MoodDiary
                 }
                 else
                 {
-                    // Добавляем пустую запись для дней без настроений
                     WeeklyStats.Add(new WeekDayStatViewModel
                     {
                         Date = date,
@@ -151,8 +135,6 @@ namespace MoodDiary
                 MoodChartGrid.Children.Add(noDataLabel);
                 return;
             }
-
-            // Create a canvas for drawing the chart
             var drawableView = new GraphicsView
             {
                 Drawable = new MoodChartDrawable(DayMoods, _currentDate),
@@ -165,13 +147,10 @@ namespace MoodDiary
 
         private void UpdateDateDisplay()
         {
-            // Обновляем текст на кнопке с текущей датой
             CurrentDayButton.Text = _currentDate.Date == DateTime.Today.Date
                 ? $"Сегодня: {_currentDate:dd.MM.yyyy}"
                 : _currentDate.ToString("dd.MM.yyyy");
         }
-
-        // Обработчики для кнопок навигации по дням
         private async void OnPreviousDayClicked(object sender, EventArgs e)
         {
             _currentDate = _currentDate.AddDays(-1);
@@ -182,7 +161,6 @@ namespace MoodDiary
 
         private async void OnNextDayClicked(object sender, EventArgs e)
         {
-            // Не позволяем выбрать дату в будущем
             if (_currentDate.Date >= DateTime.Today.Date)
                 return;
 
@@ -202,7 +180,6 @@ namespace MoodDiary
 
         private async void OnMoodButtonClicked(object sender, EventArgs e)
         {
-            // Можно добавлять настроение только сегодня
             if (_currentDate.Date != DateTime.Today.Date)
             {
                 await DisplayAlert("Внимание", "Настроение можно добавить только за сегодня", "ОК");
@@ -211,15 +188,14 @@ namespace MoodDiary
 
             if (sender is Button btn && int.TryParse(btn.CommandParameter.ToString(), out int moodIndex))
             {
-                // Создаем запись настроения с текущей датой и временем
                 var entry = new MoodEntry
                 {
                     Timestamp = DateTime.Now,
-                    MoodValue = moodIndex  // индекс от 0 до 9
+                    MoodValue = moodIndex
                 };
 
                 await MoodDataService.AddEntryAsync(entry);
-                await LoadDataAsync(); // Перезагружаем и дневные данные, и недельную статистику
+                await LoadDataAsync();
                 await DisplayAlert("Запись сохранена", $"Ваше настроение \"{GetMoodName(moodIndex)}\" сохранено.", "OK");
             }
         }
@@ -246,7 +222,6 @@ namespace MoodDiary
 
         private Color GetMoodColor(float moodValue)
         {
-            // Return different colors based on mood value (0 = worst mood, 9 = best mood)
             int intValue = (int)Math.Round(moodValue);
             switch (intValue)
             {
@@ -264,8 +239,6 @@ namespace MoodDiary
             }
         }
     }
-
-    // Модель для статистики дня недели
     public class WeekDayStatViewModel
     {
         public DateTime Date { get; set; }

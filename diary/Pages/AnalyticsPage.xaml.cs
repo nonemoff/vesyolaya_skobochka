@@ -12,35 +12,25 @@ namespace MoodDiary
 {
     public partial class AnalyticsPage : ContentPage
     {
-        // Перечисление режимов просмотра
         private enum ViewMode
         {
             Week,
             Month
         }
 
-        // Текущий режим просмотра
         private ViewMode _currentMode = ViewMode.Week;
-
-        // Текущий период (для недель - начало недели, для месяцев - первый день месяца)
         private DateTime _currentPeriodStart;
-
-        // Кэш данных настроения для быстрого доступа
         private List<MoodEntry> _allMoodEntries = new List<MoodEntry>();
 
         public AnalyticsPage()
         {
             InitializeComponent();
-
-            // Устанавливаем текущий период по умолчанию
             SetInitialPeriod();
         }
 
         protected override async void OnAppearing()
         {
             base.OnAppearing();
-
-            // Загружаем данные и обновляем интерфейс
             await LoadDataAsync();
             UpdateUI();
         }
@@ -51,13 +41,11 @@ namespace MoodDiary
 
             if (_currentMode == ViewMode.Week)
             {
-                // Определяем начало текущей недели (понедельник)
                 int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
                 _currentPeriodStart = today.AddDays(-diff);
             }
-            else // Month mode
+            else
             {
-                // Первый день текущего месяца
                 _currentPeriodStart = new DateTime(today.Year, today.Month, 1);
             }
 
@@ -66,20 +54,14 @@ namespace MoodDiary
 
         private async Task LoadDataAsync()
         {
-            // Загружаем все данные
             await MoodDataService.LoadEntriesAsync();
             _allMoodEntries = MoodDataService.GetEntries().ToList();
         }
 
         private void UpdateUI()
         {
-            // Обновляем визуальное состояние кнопок режима
             UpdateModeButtonsState();
-
-            // Обновляем данные и графики для текущего периода
             UpdatePeriodData();
-
-            // Отрисовываем графики
             DrawTrendChart();
             DrawDistributionChart();
         }
@@ -113,10 +95,7 @@ namespace MoodDiary
 
         private void UpdatePeriodData()
         {
-            // Получаем данные для текущего периода
             var periodEntries = GetEntriesForCurrentPeriod();
-
-            // Если нет данных, показываем сообщение и выходим
             if (!periodEntries.Any())
             {
                 AverageMoodLabel.Text = "—";
@@ -128,33 +107,27 @@ namespace MoodDiary
                 ComparisonLabel.Text = "Недостаточно данных для анализа";
                 return;
             }
-
-            // Вычисляем метрики для текущего периода
             double averageMood = periodEntries.Average(e => e.MoodValue);
             int minMood = periodEntries.Min(e => e.MoodValue);
             int maxMood = periodEntries.Max(e => e.MoodValue);
             int amplitude = maxMood - minMood;
             int entryCount = periodEntries.Count;
-
-            // Отображаем метрики
             AverageMoodLabel.Text = $"{averageMood:F1}";
             AmplitudeLabel.Text = amplitude.ToString();
             EntryCountLabel.Text = entryCount.ToString();
             CurrentPeriodLabel.Text = $"{averageMood:F1}";
 
-            // Вычисляем и отображаем тренд
+
             double trend = CalculateTrend(periodEntries);
             TrendLabel.Text = trend >= 0 ? $"+{trend:F1}" : $"{trend:F1}";
             TrendLabel.TextColor = trend >= 0 ? Colors.Green : Colors.Red;
 
-            // Сравниваем с предыдущим периодом
             var previousPeriodEntries = GetEntriesForPreviousPeriod();
             if (previousPeriodEntries.Any())
             {
                 double previousAverage = previousPeriodEntries.Average(e => e.MoodValue);
                 PreviousPeriodLabel.Text = $"{previousAverage:F1}";
 
-                // Вычисляем процент изменения
                 double changePercent = (averageMood - previousAverage) / previousAverage * 100;
                 string changeDirection = changePercent >= 0 ? "улучшилось" : "ухудшилось";
                 ComparisonLabel.Text = $"Ваше настроение {changeDirection} на {Math.Abs(changePercent):F1}% по сравнению с предыдущим периодом";
@@ -172,13 +145,11 @@ namespace MoodDiary
 
             if (_currentMode == ViewMode.Week)
             {
-                // Неделя заканчивается через 7 дней от начала
-                periodEnd = _currentPeriodStart.AddDays(7).AddSeconds(-1); // 23:59:59 последнего дня
+                periodEnd = _currentPeriodStart.AddDays(7).AddSeconds(-1);
             }
-            else // Month mode
+            else
             {
-                // Месяц заканчивается в последний день месяца
-                periodEnd = _currentPeriodStart.AddMonths(1).AddSeconds(-1); // 23:59:59 последнего дня
+                periodEnd = _currentPeriodStart.AddMonths(1).AddSeconds(-1);
             }
 
             return _allMoodEntries
@@ -194,12 +165,12 @@ namespace MoodDiary
             if (_currentMode == ViewMode.Week)
             {
                 previousPeriodStart = _currentPeriodStart.AddDays(-7);
-                previousPeriodEnd = _currentPeriodStart.AddSeconds(-1); // 23:59:59 последнего дня предыдущей недели
+                previousPeriodEnd = _currentPeriodStart.AddSeconds(-1);
             }
-            else // Month mode
+            else
             {
                 previousPeriodStart = _currentPeriodStart.AddMonths(-1);
-                previousPeriodEnd = _currentPeriodStart.AddSeconds(-1); // 23:59:59 последнего дня предыдущего месяца
+                previousPeriodEnd = _currentPeriodStart.AddSeconds(-1);
             }
 
             return _allMoodEntries
@@ -209,11 +180,9 @@ namespace MoodDiary
 
         private double CalculateTrend(List<MoodEntry> entries)
         {
-            // Если менее 2 записей, тренд посчитать невозможно
             if (entries.Count < 2)
                 return 0;
 
-            // Простой метод вычисления тренда - разница между средним во второй и первой половине периода
             var sortedEntries = entries.OrderBy(e => e.Timestamp).ToList();
             int midPoint = sortedEntries.Count / 2;
 
@@ -243,7 +212,6 @@ namespace MoodDiary
                 return;
             }
 
-            // Создаем график тренда
             var trendChart = new GraphicsView
             {
                 Drawable = new TrendChartDrawable(periodEntries, _currentMode == ViewMode.Week),
@@ -271,7 +239,6 @@ namespace MoodDiary
                 return;
             }
 
-            // Создаем график распределения настроения
             var distributionChart = new GraphicsView
             {
                 Drawable = new DistributionChartDrawable(periodEntries),
@@ -282,7 +249,6 @@ namespace MoodDiary
             DistributionChartGrid.Children.Add(distributionChart);
         }
 
-        // Обработчики событий для кнопок переключения режима
         private void OnWeekModeClicked(object sender, EventArgs e)
         {
             if (_currentMode != ViewMode.Week)
@@ -303,14 +269,13 @@ namespace MoodDiary
             }
         }
 
-        // Обработчики событий для кнопок навигации по периодам
         private void OnPreviousPeriodClicked(object sender, EventArgs e)
         {
             if (_currentMode == ViewMode.Week)
             {
                 _currentPeriodStart = _currentPeriodStart.AddDays(-7);
             }
-            else // Month mode
+            else
             {
                 _currentPeriodStart = _currentPeriodStart.AddMonths(-1);
             }
@@ -329,12 +294,11 @@ namespace MoodDiary
             {
                 nextPeriodStart = _currentPeriodStart.AddDays(7);
             }
-            else // Month mode
+            else
             {
                 nextPeriodStart = _currentPeriodStart.AddMonths(1);
             }
 
-            // Нельзя выбрать период в будущем
             if (nextPeriodStart > DateTime.Today)
                 return;
 

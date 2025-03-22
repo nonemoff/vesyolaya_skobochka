@@ -19,14 +19,12 @@ namespace MoodDiary.Graphics
         {
             if (_moodEntries == null || _moodEntries.Count == 0)
             {
-                // Draw empty chart message
                 canvas.FontSize = 14;
                 canvas.FontColor = Colors.White;
                 canvas.DrawString("Нет данных за выбранный период", dirtyRect.Width / 2, dirtyRect.Height / 2, HorizontalAlignment.Center);
                 return;
             }
 
-            // Set up chart dimensions
             float width = dirtyRect.Width;
             float height = dirtyRect.Height;
             float leftPadding = 50;
@@ -36,8 +34,7 @@ namespace MoodDiary.Graphics
             float chartWidth = width - (leftPadding + rightPadding);
             float chartHeight = height - (topPadding + bottomPadding);
 
-            // Calculate mood distribution
-            var distribution = new int[10]; // 0-9 mood values
+            var distribution = new int[10];
             foreach (var entry in _moodEntries)
             {
                 if (entry.MoodValue >= 0 && entry.MoodValue <= 9)
@@ -46,7 +43,6 @@ namespace MoodDiary.Graphics
                 }
             }
 
-            // Find maximum frequency for scaling
             int maxCount = distribution.Max();
             if (maxCount == 0)
             {
@@ -56,21 +52,16 @@ namespace MoodDiary.Graphics
                 return;
             }
 
-            // Draw chart background
             canvas.FillColor = Colors.White.WithAlpha(0.1f);
             canvas.FillRectangle(leftPadding, topPadding, chartWidth, chartHeight);
 
-            // Draw chart axes
             canvas.StrokeColor = Colors.Gray;
             canvas.StrokeSize = 2;
 
-            // X-axis
-            canvas.DrawLine(leftPadding, height - bottomPadding, width - rightPadding, height - bottomPadding);
 
-            // Y-axis
+            canvas.DrawLine(leftPadding, height - bottomPadding, width - rightPadding, height - bottomPadding);
             canvas.DrawLine(leftPadding, topPadding, leftPadding, height - bottomPadding);
 
-            // Define mood names for X-axis labels
             string[] moodLabels = {
                 "Подв", // 0 - Подавлен
                 "Трев", // 1 - Тревожен
@@ -84,33 +75,23 @@ namespace MoodDiary.Graphics
                 "Счст" // 9 - Счастлив
             };
 
-            // Calculate bar width and spacing
             float barWidth = chartWidth / 10 * 0.8f;
             float barSpacing = chartWidth / 10 * 0.2f;
             float barCenter = chartWidth / 10;
 
-            // Draw bars and X-axis labels
             for (int i = 0; i < 10; i++)
             {
                 float x = leftPadding + i * barCenter;
-
-                // Calculate bar height based on frequency
                 float barHeight = distribution[i] * chartHeight / maxCount;
-
-                // Draw bar
                 float barX = x + barSpacing / 2;
                 float barY = height - bottomPadding - barHeight;
 
-                // Choose color based on mood value
                 canvas.FillColor = GetMoodColor(i);
                 canvas.FillRectangle(barX, barY, barWidth, barHeight);
-
-                // Draw border
                 canvas.StrokeColor = Colors.White;
                 canvas.StrokeSize = 1;
                 canvas.DrawRectangle(barX, barY, barWidth, barHeight);
 
-                // Draw count on top of the bar if it's tall enough
                 if (barHeight > 15)
                 {
                     canvas.FontColor = Colors.White;
@@ -118,30 +99,22 @@ namespace MoodDiary.Graphics
                     canvas.DrawString(distribution[i].ToString(), barX + barWidth / 2, barY + 10, HorizontalAlignment.Center);
                 }
 
-                // Draw X-axis label
                 canvas.FontColor = Colors.Gray;
                 canvas.FontSize = 10;
                 canvas.DrawString(moodLabels[i], barX + barWidth / 2, height - bottomPadding + 15, HorizontalAlignment.Center);
             }
 
-            // Draw Y-axis labels
             canvas.FontSize = 10;
             canvas.FontColor = Colors.Gray;
-
-            // Show only a few Y-axis labels to avoid clutter
             int stepSize = Math.Max(1, maxCount / 4);
             for (int i = 0; i <= maxCount; i += stepSize)
             {
                 float y = height - bottomPadding - i * chartHeight / maxCount;
                 canvas.DrawString(i.ToString(), leftPadding - 15, y - 5, HorizontalAlignment.Left);
-
-                // Draw horizontal grid line
                 canvas.StrokeColor = Colors.LightGray;
                 canvas.StrokeSize = 1;
                 canvas.DrawLine(leftPadding, y, width - rightPadding, y);
             }
-
-            // Draw most common mood annotation
             int mostCommonMoodIndex = Array.IndexOf(distribution, maxCount);
             string mostCommonMood = GetFullMoodName(mostCommonMoodIndex);
 
@@ -154,7 +127,6 @@ namespace MoodDiary.Graphics
 
         private Color GetMoodColor(int moodValue)
         {
-            // Return different colors based on mood value (0 = worst mood, 9 = best mood)
             switch (moodValue)
             {
                 case 0: return Colors.DarkRed;
