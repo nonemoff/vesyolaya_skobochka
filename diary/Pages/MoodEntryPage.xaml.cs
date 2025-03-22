@@ -17,11 +17,10 @@ namespace MoodDiary
         {
             if (sender is Button btn && int.TryParse(btn.CommandParameter.ToString(), out int moodIndex))
             {
-                // Создаем запись настроения с текущей датой и временем
                 var entry = new MoodEntry
                 {
                     Timestamp = DateTime.Now,
-                    MoodValue = moodIndex  // индекс от 0 до 9
+                    MoodValue = moodIndex
                 };
 
                 await MoodDataService.AddEntryAsync(entry);

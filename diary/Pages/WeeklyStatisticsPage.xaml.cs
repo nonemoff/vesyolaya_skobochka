@@ -29,7 +29,6 @@ namespace MoodDiary
             WeeklySummaries.Clear();
 
             DateTime today = DateTime.Today;
-            // Определяем начало недели (можно изменить логику, если неделя начинается не с воскресенья)
             DateTime startOfWeek = today.AddDays(-((int)today.DayOfWeek));
 
             var weeklyEntries = MoodDataService.GetEntries()
@@ -39,8 +38,6 @@ namespace MoodDiary
 
             foreach (var group in weeklyEntries)
             {
-                // Вычисляем среднее значение настроения
-                // Поскольку MoodValue хранится с индексом 0-9, прибавляем 1 для удобства отображения (диапазон 1-10)
                 double avg = group.Average(x => x.MoodValue) + 1;
                 string summary = $"Среднее настроение: {avg:F1}";
                 WeeklySummaries.Add(new DailyMoodSummary { Date = group.Key, Summary = summary });
