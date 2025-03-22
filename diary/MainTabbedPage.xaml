@@ -5,6 +5,6 @@
              x:Class="MoodDiary.MainTabbedPage">
     <TabbedPage.Children>
         <local:MoodEntryPage Title="Запись настроения" />
-        <local:WeeklyStatisticsPage Title="Статистика недели" />
+        <local:AnalyticsPage Title="Статистика" />
     </TabbedPage.Children>
 </TabbedPage>

@@ -66,8 +66,8 @@
 	  <Compile Update="MainTabbedPage.xaml.cs">
 	    <DependentUpon>MainTabbedPage.xaml</DependentUpon>
 	  </Compile>
-	  <Compile Update="Pages\WeeklyStatisticsPage.xaml.cs">
-	    <DependentUpon>WeeklyStatisticsPage.xaml</DependentUpon>
+	  <Compile Update="Pages\AnalyticsPage.xaml.cs">
+	    <DependentUpon>AnalyticsPage.xaml</DependentUpon>
 	  </Compile>
 	  <Compile Update="Pages\MoodEntryPage.xaml.cs">
 	    <DependentUpon>MoodEntryPage.xaml</DependentUpon>
@@ -75,7 +75,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiXaml Update="Pages\WeeklyStatisticsPage.xaml">
+	  <MauiXaml Update="Pages\AnalyticsPage.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	  <MauiXaml Update="Pages\MoodEntryPage.xaml">

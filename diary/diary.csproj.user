@@ -6,7 +6,7 @@
     <ActiveDebugProfile>Windows Machine</ActiveDebugProfile>
   </PropertyGroup>
   <ItemGroup>
-    <MauiXaml Update="Pages\WeeklyStatisticsPage.xaml">
+    <MauiXaml Update="Pages\AnalyticsPage.xaml">
       <SubType>Designer</SubType>
     </MauiXaml>
     <MauiXaml Update="Pages\MoodEntryPage.xaml">

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MoodDiary.AnalyticsPage"
+             Title="Аналитика настроения">
+    <Grid RowDefinitions="Auto,Auto,*" Padding="5" RowSpacing="10">
+        <!-- Верхний навигационный бар -->
+        <Frame Grid.Row="0" Margin="0,0,0,0" Padding="5" BackgroundColor="{StaticResource Primary}">
+            <Label Text="Аналитика настроения" 
+                   TextColor="White"
+                   FontSize="22" 
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+        </Frame>
+
+        <!-- Панель выбора режима и периода -->
+        <Grid Grid.Row="1" RowDefinitions="Auto,Auto" Margin="0,0,0,0">
+            <!-- Переключатель режима просмотра -->
+            <Grid Grid.Row="0" ColumnDefinitions="*,*" Margin="0,0,0,5">
+                <Button Grid.Column="0" 
+                        x:Name="WeekModeButton"
+                        Text="Недели" 
+                        Clicked="OnWeekModeClicked"
+                        BackgroundColor="{StaticResource Primary}"
+                        CornerRadius="10"
+                        Margin="0,0,1,0"/>
+
+                <Button Grid.Column="1" 
+                        x:Name="MonthModeButton"
+                        Text="Месяцы" 
+                        Clicked="OnMonthModeClicked"
+                        BackgroundColor="{StaticResource Gray400}"
+                        CornerRadius="10"
+                        Margin="1,0,0,0"/>
+            </Grid>
+
+            <!-- Навигация по периодам -->
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,0">
+                <Button Grid.Column="0" 
+                        Text="⬅️ Назад" 
+                        Clicked="OnPreviousPeriodClicked"
+                        Margin="0,0,5,0"/>
+
+                <Button Grid.Column="1" 
+                        x:Name="CurrentPeriodButton"
+                        Text="Текущий период" 
+                        Clicked="OnCurrentPeriodClicked"
+                        HorizontalOptions="Fill"
+                        Margin="5,0"/>
+
+                <Button Grid.Column="2" 
+                        Text="Вперед ➡️" 
+                        Clicked="OnNextPeriodClicked"
+                        Margin="5,0,0,0"/>
+            </Grid>
+        </Grid>
+
+        <!-- Основная область с данными -->
+        <ScrollView Grid.Row="2">
+            <StackLayout Spacing="15">
+                <!-- График тренда настроения -->
+                <Frame BorderColor="{StaticResource Primary}" Padding="10" Margin="0,0,0,0">
+                    <StackLayout>
+                        <Label Text="Динамика настроения" 
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               Margin="0,0,0,10"/>
+                        <Grid x:Name="TrendChartGrid" 
+                              HeightRequest="200"
+                              HorizontalOptions="Fill">
+                            <!-- Здесь будет график тренда -->
+                        </Grid>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Ключевые метрики -->
+                <Frame BorderColor="{StaticResource Primary}" Padding="10" Margin="0,0,0,0">
+                    <Grid RowDefinitions="Auto,*" RowSpacing="10">
+                        <Label Grid.Row="0" 
+                               Text="Основные показатели" 
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"/>
+
+                        <Grid Grid.Row="1" ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <!-- Левая колонка метрик -->
+                            <StackLayout Grid.Column="0" Spacing="15">
+                                <Frame BorderColor="{StaticResource Gray300}" Padding="10" BackgroundColor="{StaticResource Secondary}">
+                                    <StackLayout>
+                                        <Label Text="Среднее настроение" FontAttributes="Bold"/>
+                                        <Label x:Name="AverageMoodLabel" Text="7.5" FontSize="24" HorizontalOptions="Center"/>
+                                    </StackLayout>
+                                </Frame>
+
+                                <Frame BorderColor="{StaticResource Gray300}" Padding="10" BackgroundColor="{StaticResource Secondary}">
+                                    <StackLayout>
+                                        <Label Text="Амплитуда" FontAttributes="Bold"/>
+                                        <Label x:Name="AmplitudeLabel" Text="4.2" FontSize="24" HorizontalOptions="Center"/>
+                                    </StackLayout>
+                                </Frame>
+                            </StackLayout>
+
+                            <!-- Правая колонка метрик -->
+                            <StackLayout Grid.Column="1" Spacing="15">
+                                <Frame BorderColor="{StaticResource Gray300}" Padding="10" BackgroundColor="{StaticResource Secondary}">
+                                    <StackLayout>
+                                        <Label Text="Тренд" FontAttributes="Bold"/>
+                                        <Label x:Name="TrendLabel" Text="+0.8" FontSize="24" TextColor="Green" HorizontalOptions="Center"/>
+                                    </StackLayout>
+                                </Frame>
+
+                                <Frame BorderColor="{StaticResource Gray300}" Padding="10" BackgroundColor="{StaticResource Secondary}">
+                                    <StackLayout>
+                                        <Label Text="Записей" FontAttributes="Bold"/>
+                                        <Label x:Name="EntryCountLabel" Text="24" FontSize="24" HorizontalOptions="Center"/>
+                                    </StackLayout>
+                                </Frame>
+                            </StackLayout>
+                        </Grid>
+                    </Grid>
+                </Frame>
+
+                <!-- Распределение настроения -->
+                <Frame BorderColor="{StaticResource Primary}" Padding="10" Margin="0,0,0,0">
+                    <StackLayout>
+                        <Label Text="Распределение настроения" 
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               Margin="0,0,0,10"/>
+                        <Grid x:Name="DistributionChartGrid" 
+                              HeightRequest="150"
+                              HorizontalOptions="Fill">
+                            <!-- Здесь будет график распределения -->
+                        </Grid>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Сравнение с предыдущим периодом -->
+                <Frame BorderColor="{StaticResource Primary}" Padding="10" Margin="0,0,0,15">
+                    <StackLayout>
+                        <Label Text="Сравнение с предыдущим периодом" 
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               Margin="0,0,0,10"/>
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <StackLayout Grid.Column="0">
+                                <Label Text="Прошлый" HorizontalOptions="Center"/>
+                                <Frame BorderColor="{StaticResource Gray300}" BackgroundColor="{StaticResource Secondary}" Padding="10" HorizontalOptions="Fill">
+                                    <Label x:Name="PreviousPeriodLabel" Text="6.7" FontSize="24" HorizontalOptions="Center"/>
+                                </Frame>
+                            </StackLayout>
+                            <StackLayout Grid.Column="1">
+                                <Label Text="Текущий" HorizontalOptions="Center"/>
+                                <Frame BorderColor="{StaticResource Gray300}" BackgroundColor="{StaticResource Secondary}" Padding="10" HorizontalOptions="Fill">
+                                    <Label x:Name="CurrentPeriodLabel" Text="7.5" FontSize="24" HorizontalOptions="Center"/>
+                                </Frame>
+                            </StackLayout>
+                        </Grid>
+                        <Label x:Name="ComparisonLabel" 
+                               Text="Ваше настроение улучшилось на 11.9% по сравнению с предыдущим периодом" 
+                               Margin="0,10,0,0"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center"/>
+                    </StackLayout>
+                </Frame>
+            </StackLayout>
+        </ScrollView>
+    </Grid>
+</ContentPage>

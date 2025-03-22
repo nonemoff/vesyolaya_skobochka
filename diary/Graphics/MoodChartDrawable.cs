@@ -8,10 +8,12 @@ namespace MoodDiary.Graphics
     public class MoodChartDrawable : IDrawable
     {
         private readonly ObservableCollection<MoodViewModel> _moodData;
+        private readonly DateTime _currentDate;
 
-        public MoodChartDrawable(ObservableCollection<MoodViewModel> moodData)
+        public MoodChartDrawable(ObservableCollection<MoodViewModel> moodData, DateTime currentDate)
         {
             _moodData = moodData;
+            _currentDate = currentDate;
         }
 
         public void Draw(ICanvas canvas, RectF dirtyRect)
@@ -21,7 +23,10 @@ namespace MoodDiary.Graphics
                 // Draw empty chart message
                 canvas.FontSize = 14;
                 canvas.FontColor = Colors.White;
-                canvas.DrawString("Нет данных за сегодня", dirtyRect.Width / 2, dirtyRect.Height / 2, HorizontalAlignment.Center);
+                string message = _currentDate.Date == DateTime.Today.Date
+                    ? "Нет данных за сегодня"
+                    : $"Нет данных за {_currentDate:dd.MM.yyyy}";
+                canvas.DrawString(message, dirtyRect.Width / 2, dirtyRect.Height / 2, HorizontalAlignment.Center);
                 return;
             }
 
@@ -45,7 +50,10 @@ namespace MoodDiary.Graphics
             // Draw chart title at the very top
             canvas.FontSize = 14;
             canvas.FontColor = Colors.White;
-            canvas.DrawString("Динамика настроения", width / 2, 10, HorizontalAlignment.Center);
+            string title = _currentDate.Date == DateTime.Today.Date
+                ? "Динамика настроения сегодня"
+                : $"Динамика настроения {_currentDate:dd.MM.yyyy}";
+            canvas.DrawString(title, width / 2, 10, HorizontalAlignment.Center);
 
             // Draw chart axes
             canvas.StrokeColor = Colors.Gray;
@@ -72,13 +80,16 @@ namespace MoodDiary.Graphics
                 "Счастлив"  // 10
             };
 
+            // Calculate the step size for grid lines
+            float yStep = chartHeight / 10.0f;
+
             // Draw horizontal grid lines and labels for Y-axis with mood names
             canvas.FontSize = 10;
             canvas.FontColor = Colors.Gray;
 
             for (int i = 0; i <= 10; i++)
             {
-                float y = height - bottomPadding - (i / 10.0f) * chartHeight;
+                float y = height - bottomPadding - i * yStep;
 
                 // Grid line for all points
                 canvas.StrokeColor = Colors.LightGray;
@@ -94,7 +105,7 @@ namespace MoodDiary.Graphics
             }
 
             // Calculate the fixed time range for the day (00:00 to 23:59)
-            DateTime startOfDay = DateTime.Today;
+            DateTime startOfDay = _currentDate.Date;
             DateTime endOfDay = startOfDay.AddDays(1).AddSeconds(-1); // 23:59:59
             TimeSpan dayTimeSpan = endOfDay - startOfDay;
             float timeScale = chartWidth / (float)dayTimeSpan.TotalMinutes;
@@ -123,7 +134,9 @@ namespace MoodDiary.Graphics
             {
                 // Calculate average mood
                 float avgMood = (float)sortedMoods.Average(m => m.MoodValue);
-                float avgY = height - bottomPadding - (avgMood / 9.0f) * chartHeight;
+
+                // Calculate average mood line position with precise step calculation
+                float avgY = height - bottomPadding - avgMood * yStep;
 
                 // Draw average mood line
                 canvas.StrokeColor = Colors.Yellow;
@@ -148,8 +161,8 @@ namespace MoodDiary.Graphics
                     // Calculate X position based on time of day (relative to start of day)
                     float x = leftPadding + (float)(mood.Timestamp - startOfDay).TotalMinutes * timeScale;
 
-                    // Calculate Y position
-                    float y = height - bottomPadding - (mood.MoodValue / 9.0f) * chartHeight;
+                    // Calculate Y position with precise step calculation
+                    float y = height - bottomPadding - mood.MoodValue * yStep;
 
                     // Draw line to previous point
                     if (prevPoint.HasValue)
@@ -173,27 +186,30 @@ namespace MoodDiary.Graphics
                 }
             }
 
-            // Draw current time line
-            DateTime now = DateTime.Now;
-            float currentTimeX = leftPadding + (float)(now - startOfDay).TotalMinutes * timeScale;
-
-            // Only draw if within the chart's range
-            if (currentTimeX >= leftPadding && currentTimeX <= width - rightPadding)
+            // Draw current time line only for today
+            if (_currentDate.Date == DateTime.Today.Date)
             {
-                // Draw vertical current time line
-                canvas.StrokeColor = Colors.Red;
-                canvas.StrokeSize = 2;
-                canvas.StrokeDashPattern = new float[] { 3, 3 }; // Dashed line
-                canvas.DrawLine(currentTimeX, topPadding, currentTimeX, height - bottomPadding);
+                DateTime now = DateTime.Now;
+                float currentTimeX = leftPadding + (float)(now - startOfDay).TotalMinutes * timeScale;
 
-                // Reset dash pattern
-                canvas.StrokeDashPattern = null;
+                // Only draw if within the chart's range
+                if (currentTimeX >= leftPadding && currentTimeX <= width - rightPadding)
+                {
+                    // Draw vertical current time line
+                    canvas.StrokeColor = Colors.Red;
+                    canvas.StrokeSize = 2;
+                    canvas.StrokeDashPattern = new float[] { 3, 3 }; // Dashed line
+                    canvas.DrawLine(currentTimeX, topPadding, currentTimeX, height - bottomPadding);
 
-                // Add current time label
-                canvas.FillColor = Colors.Red.WithAlpha(0.7f);
-                canvas.FillRectangle(currentTimeX - 25, topPadding - 20, 50, 20);
-                canvas.FontColor = Colors.White;
-                canvas.DrawString(now.ToString("HH:mm"), currentTimeX, topPadding - 10, HorizontalAlignment.Center);
+                    // Reset dash pattern
+                    canvas.StrokeDashPattern = null;
+
+                    // Add current time label
+                    canvas.FillColor = Colors.Red.WithAlpha(0.7f);
+                    canvas.FillRectangle(currentTimeX - 25, topPadding - 20, 50, 20);
+                    canvas.FontColor = Colors.White;
+                    canvas.DrawString(now.ToString("HH:mm"), currentTimeX, topPadding - 10, HorizontalAlignment.Center);
+                }
             }
         }
 

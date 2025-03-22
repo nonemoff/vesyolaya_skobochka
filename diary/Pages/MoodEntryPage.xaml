@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MoodDiary.MoodEntryPage"
              Title="Запись настроения">
-    <Grid RowDefinitions="1*,10*,2*" Padding="5" RowSpacing="5">
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="5" RowSpacing="5">
         <!-- Верхний навигационный бар -->
         <Frame Grid.Row="0" Margin="0,0,0,0" Padding="5" BackgroundColor="{StaticResource Primary}">
             <Label Text="Дневник настроения" 
@@ -13,8 +13,28 @@
                    HorizontalOptions="Center" />
         </Frame>
 
-        <!-- Центральная часть: График и лог настроения -->
-        <Grid Grid.Row="1" ColumnDefinitions="1.2*,0.8*" Margin="0,5,0,5" VerticalOptions="FillAndExpand">
+        <!-- Навигация по дням -->
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" Margin="0,5,0,5">
+            <Button Grid.Column="0" 
+                    Text="⬅️ Назад" 
+                    Clicked="OnPreviousDayClicked"
+                    Margin="0,0,5,0"/>
+
+            <Button Grid.Column="1" 
+                    x:Name="CurrentDayButton"
+                    Text="Сегодня: 22.03.2025" 
+                    Clicked="OnTodayClicked"
+                    HorizontalOptions="Fill"
+                    Margin="5,0"/>
+
+            <Button Grid.Column="2" 
+                    Text="Вперед ➡️" 
+                    Clicked="OnNextDayClicked"
+                    Margin="5,0,0,0"/>
+        </Grid>
+
+        <!-- Центральная часть: График, лог настроения и статистика недели -->
+        <Grid Grid.Row="2" ColumnDefinitions="1.2*,0.8*,0.8*" Margin="0,5,0,5" VerticalOptions="FillAndExpand">
             <!-- График настроения (левая колонка) -->
             <Frame Grid.Column="0" Margin="0,0,5,0" BorderColor="{StaticResource Primary}" Padding="5">
                 <Grid x:Name="MoodChartGrid" 
@@ -24,10 +44,11 @@
                 </Grid>
             </Frame>
 
-            <!-- Лог настроения (правая колонка) -->
-            <Frame Grid.Column="1" Margin="5,0,0,0" BorderColor="{StaticResource Primary}" Padding="5">
+            <!-- Лог настроения (средняя колонка) -->
+            <Frame Grid.Column="1" Margin="5,0,5,0" BorderColor="{StaticResource Primary}" Padding="5">
                 <Grid RowDefinitions="Auto,*">
                     <Label Grid.Row="0"
+                           x:Name="DayRecordsLabel"
                            Text="Записи за сегодня:" 
                            FontSize="16" 
                            FontAttributes="Bold"
@@ -48,29 +69,58 @@
                     </ScrollView>
                 </Grid>
             </Frame>
+
+            <!-- Статистика недели (правая колонка) -->
+            <Frame Grid.Column="2" Margin="5,0,0,0" BorderColor="{StaticResource Primary}" Padding="5">
+                <Grid RowDefinitions="Auto,*">
+                    <Label Grid.Row="0"
+                           Text="Статистика недели:" 
+                           FontSize="16" 
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center"
+                           Margin="0,0,0,5" />
+                    <ScrollView Grid.Row="1" VerticalOptions="Fill">
+                        <CollectionView x:Name="WeeklyStatsCollectionView" 
+                                      VerticalOptions="Fill">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="5" ColumnDefinitions="*,Auto,Auto">
+                                        <Label Grid.Column="0" Text="{Binding Date, StringFormat='{0:ddd, dd.MM}'}" />
+                                        <Label Grid.Column="1" Text="{Binding AverageMood, StringFormat='{0:F1}'}" 
+                                               HorizontalOptions="End" Margin="5,0"/>
+                                        <Frame Grid.Column="2" WidthRequest="20" HeightRequest="20" 
+                                               CornerRadius="10" Padding="0" 
+                                               BackgroundColor="{Binding MoodColor}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </ScrollView>
+                </Grid>
+            </Frame>
         </Grid>
 
         <!-- Нижняя часть: Кнопки для добавления настроения -->
-        <Frame Grid.Row="2" Margin="0,0,0,0" BorderColor="{StaticResource Primary}" Padding="5">
+        <Frame Grid.Row="3" Margin="0,0,0,0" BorderColor="{StaticResource Primary}" Padding="5">
             <StackLayout Spacing="2">
-                <Label Text="Отметьте ваше настроение" 
+                <Label Text="Отметьте ваше настроение:" 
                        FontSize="16" 
                        FontAttributes="Bold"
                        HorizontalOptions="Center"
                        Margin="0,0,0,5" />
-                <ScrollView>
+                <ScrollView VerticalOptions="Start" MaximumHeightRequest="120">
                     <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Center">
                         <!-- Кнопки для выбора настроения -->
-                        <Button Text="Подавлен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="0" FontSize="12"/>
-                        <Button Text="Тревожен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="1" FontSize="12"/>
-                        <Button Text="Разочарован" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="2" FontSize="12"/>
-                        <Button Text="Злюсь" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="3" FontSize="12"/>
-                        <Button Text="Грустен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="4" FontSize="12"/>
-                        <Button Text="Озадачен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="5" FontSize="12"/>
-                        <Button Text="Нейтрален" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="6" FontSize="12"/>
-                        <Button Text="Спокоен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="7" FontSize="12"/>
-                        <Button Text="Радостен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="8" FontSize="12"/>
-                        <Button Text="Счастлив" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="9" FontSize="12"/>
+                        <Button Text="Подавлен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="0" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Тревожен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="1" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Разочарован" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="2" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Злюсь" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="3" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Грустен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="4" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Озадачен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="5" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Нейтрален" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="6" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Спокоен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="7" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Радостен" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="8" FontSize="12" WidthRequest="110" HeightRequest="40"/>
+                        <Button Text="Счастлив" Clicked="OnMoodButtonClicked" Margin="2" CommandParameter="9" FontSize="12" WidthRequest="110" HeightRequest="40"/>
                     </FlexLayout>
                 </ScrollView>
             </StackLayout>
